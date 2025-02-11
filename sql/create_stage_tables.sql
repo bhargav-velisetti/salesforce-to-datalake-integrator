@@ -73,7 +73,7 @@ CREATE TABLE sfdc_stage.account(
 	SLASerialNumber__c TEXT,
 	SLAExpirationDate__c TEXT,
 	LOAD_TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
-) PARTITION BY RANGE(LastModifiedDate);
+);
 
 DROP TABLE IF EXISTS sfdc_stage.contact;
 CREATE TABLE sfdc_stage.contact (

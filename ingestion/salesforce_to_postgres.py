@@ -131,6 +131,170 @@ def update_checkpoint(cursor, table_name, last_fetch_ts):
     """)
 
 
+def Stage_to_EDW(cursor, table_name):
+    upsert_query = """
+        INSERT INTO sfdc_edw.account (
+    Id, IsDeleted, MasterRecordId, Name, Type, ParentId, 
+    BillingStreet, BillingCity, BillingState, BillingPostalCode, BillingCountry, 
+    BillingLatitude, BillingLongitude, BillingGeocodeAccuracy, BillingAddress, 
+    ShippingStreet, ShippingCity, ShippingState, ShippingPostalCode, ShippingCountry, 
+    ShippingLatitude, ShippingLongitude, ShippingGeocodeAccuracy, ShippingAddress, 
+    Phone, Fax, AccountNumber, Website, PhotoUrl, Sic, Industry, AnnualRevenue, 
+    NumberOfEmployees, Ownership, TickerSymbol, Description, Rating, Site, OwnerId, 
+    CreatedDate, CreatedById, LastModifiedDate, LastModifiedById, SystemModstamp, 
+    LastActivityDate, LastViewedDate, LastReferencedDate, Jigsaw, JigsawCompanyId, 
+    CleanStatus, AccountSource, DunsNumber, Tradestyle, NaicsCode, NaicsDesc, 
+    YearStarted, SicDesc, DandbCompanyId, CustomerPriority__c, SLA__c, Active__c, 
+    NumberofLocations__c, UpsellOpportunity__c, SLASerialNumber__c, SLAExpirationDate__c
+)
+SELECT
+    Id,
+    IsDeleted::BOOLEAN,
+    NULLIF(MasterRecordId, '')::TEXT,
+    Name,
+    Type,
+    NULLIF(ParentId, '')::TEXT,
+    BillingStreet,
+    BillingCity,
+    BillingState,
+    BillingPostalCode,
+    BillingCountry,
+    NULLIF(BillingLatitude, '')::NUMERIC,
+    NULLIF(BillingLongitude, '')::NUMERIC,
+    BillingGeocodeAccuracy,
+    BillingAddress,
+    ShippingStreet,
+    ShippingCity,
+    ShippingState,
+    ShippingPostalCode,
+    ShippingCountry,
+    NULLIF(ShippingLatitude, '')::NUMERIC,
+    NULLIF(ShippingLongitude, '')::NUMERIC,
+    ShippingGeocodeAccuracy,
+    ShippingAddress,
+    Phone,
+    Fax,
+    AccountNumber,
+    Website,
+    PhotoUrl,
+    Sic,
+    Industry,
+    NULLIF(AnnualRevenue, '')::NUMERIC,
+    -- Fix for NumberOfEmployees (convert "2.0" → 2)
+    CAST(NULLIF(NumberOfEmployees, '')::NUMERIC AS INTEGER),
+    Ownership,
+    TickerSymbol,
+    Description,
+    Rating,
+    Site,
+    OwnerId,
+    TO_TIMESTAMP(CreatedDate, 'YYYY-MM-DD"T"HH24:MI:SS.US'),
+    CreatedById,
+    TO_TIMESTAMP(LastModifiedDate, 'YYYY-MM-DD"T"HH24:MI:SS.US'),
+    LastModifiedById,
+    TO_TIMESTAMP(SystemModstamp, 'YYYY-MM-DD"T"HH24:MI:SS.US'),
+    CASE 
+        WHEN LastActivityDate IS NOT NULL AND LastActivityDate <> '' 
+        THEN TO_DATE(LastActivityDate, 'YYYY-MM-DD') 
+        ELSE NULL 
+    END,
+    TO_TIMESTAMP(LastViewedDate, 'YYYY-MM-DD"T"HH24:MI:SS.US'),
+    TO_TIMESTAMP(LastReferencedDate, 'YYYY-MM-DD"T"HH24:MI:SS.US'),
+    Jigsaw,
+    JigsawCompanyId,
+    CleanStatus,
+    AccountSource,
+    DunsNumber,
+    Tradestyle,
+    NaicsCode,
+    NaicsDesc,
+    YearStarted,
+    SicDesc,
+    DandbCompanyId,
+    CustomerPriority__c,
+    SLA__c,
+    Active__c,
+    -- Fix for NumberofLocations__c (convert "2.0" → 2)
+    CAST(NULLIF(NumberofLocations__c, '')::NUMERIC AS INTEGER),
+    UpsellOpportunity__c,
+    SLASerialNumber__c,
+    CASE 
+        WHEN SLAExpirationDate__c IS NOT NULL AND SLAExpirationDate__c <> '' 
+        THEN TO_DATE(SLAExpirationDate__c, 'YYYY-MM-DD') 
+        ELSE NULL 
+    END
+FROM sfdc_stage.account
+ON CONFLICT (Id) 
+DO UPDATE SET
+    IsDeleted = EXCLUDED.IsDeleted,
+    MasterRecordId = EXCLUDED.MasterRecordId,
+    Name = EXCLUDED.Name,
+    Type = EXCLUDED.Type,
+    ParentId = EXCLUDED.ParentId,
+    BillingStreet = EXCLUDED.BillingStreet,
+    BillingCity = EXCLUDED.BillingCity,
+    BillingState = EXCLUDED.BillingState,
+    BillingPostalCode = EXCLUDED.BillingPostalCode,
+    BillingCountry = EXCLUDED.BillingCountry,
+    BillingLatitude = EXCLUDED.BillingLatitude,
+    BillingLongitude = EXCLUDED.BillingLongitude,
+    BillingGeocodeAccuracy = EXCLUDED.BillingGeocodeAccuracy,
+    BillingAddress = EXCLUDED.BillingAddress,
+    ShippingStreet = EXCLUDED.ShippingStreet,
+    ShippingCity = EXCLUDED.ShippingCity,
+    ShippingState = EXCLUDED.ShippingState,
+    ShippingPostalCode = EXCLUDED.ShippingPostalCode,
+    ShippingCountry = EXCLUDED.ShippingCountry,
+    ShippingLatitude = EXCLUDED.ShippingLatitude,
+    ShippingLongitude = EXCLUDED.ShippingLongitude,
+    ShippingGeocodeAccuracy = EXCLUDED.ShippingGeocodeAccuracy,
+    ShippingAddress = EXCLUDED.ShippingAddress,
+    Phone = EXCLUDED.Phone,
+    Fax = EXCLUDED.Fax,
+    AccountNumber = EXCLUDED.AccountNumber,
+    Website = EXCLUDED.Website,
+    PhotoUrl = EXCLUDED.PhotoUrl,
+    Sic = EXCLUDED.Sic,
+    Industry = EXCLUDED.Industry,
+    AnnualRevenue = EXCLUDED.AnnualRevenue,
+    NumberOfEmployees = EXCLUDED.NumberOfEmployees,
+    Ownership = EXCLUDED.Ownership,
+    TickerSymbol = EXCLUDED.TickerSymbol,
+    Description = EXCLUDED.Description,
+    Rating = EXCLUDED.Rating,
+    Site = EXCLUDED.Site,
+    OwnerId = EXCLUDED.OwnerId,
+    CreatedDate = EXCLUDED.CreatedDate,
+    CreatedById = EXCLUDED.CreatedById,
+    LastModifiedDate = EXCLUDED.LastModifiedDate,
+    LastModifiedById = EXCLUDED.LastModifiedById,
+    SystemModstamp = EXCLUDED.SystemModstamp,
+    LastActivityDate = EXCLUDED.LastActivityDate,
+    LastViewedDate = EXCLUDED.LastViewedDate,
+    LastReferencedDate = EXCLUDED.LastReferencedDate,
+    Jigsaw = EXCLUDED.Jigsaw,
+    JigsawCompanyId = EXCLUDED.JigsawCompanyId,
+    CleanStatus = EXCLUDED.CleanStatus,
+    AccountSource = EXCLUDED.AccountSource,
+    DunsNumber = EXCLUDED.DunsNumber,
+    Tradestyle = EXCLUDED.Tradestyle,
+    NaicsCode = EXCLUDED.NaicsCode,
+    NaicsDesc = EXCLUDED.NaicsDesc,
+    YearStarted = EXCLUDED.YearStarted,
+    SicDesc = EXCLUDED.SicDesc,
+    DandbCompanyId = EXCLUDED.DandbCompanyId,
+    CustomerPriority__c = EXCLUDED.CustomerPriority__c,
+    SLA__c = EXCLUDED.SLA__c,
+    Active__c = EXCLUDED.Active__c,
+    NumberofLocations__c = EXCLUDED.NumberofLocations__c,
+    UpsellOpportunity__c = EXCLUDED.UpsellOpportunity__c,
+    SLASerialNumber__c = EXCLUDED.SLASerialNumber__c,
+    SLAExpirationDate__c = EXCLUDED.SLAExpirationDate__c
+WHERE sfdc_edw.account.LastModifiedDate < EXCLUDED.LastModifiedDate;
+            """
+    cursor.execute(upsert_query)
+
+
 """
 print(last_ingested_ts, current_time)
 if current_time >last_ingested_ts:
@@ -153,7 +317,7 @@ def main():
             print(f"Loading is enabled for {table_name}, incremental col: {incr_col}")
             last_ts = get_last_fetch_ts(cur, table_name)
             if last_ts is None:
-                 last_ts = datetime.datetime(1900, 1, 1, tzinfo=datetime.timezone.utc)
+                last_ts = datetime.datetime(1900, 1, 1, tzinfo=datetime.timezone.utc)
             print(f"\tLast loaded at: {last_ts}")
 
             select_query = build_select_statement(cur, table_name)
@@ -176,8 +340,13 @@ def main():
                     print(f"Successfully updated checkpoint for {table_name}.")
                 else:
                     print(f"Skipping checkpoint update due to insertion failure for {table_name}.")
-
-
+                try:
+                    Stage_to_EDW(cur, table_name)
+                    conn.commit()
+                    print("Stage table Data inserted into EDW Table successfully.")
+                except Exception as e:
+                    conn.rollback()
+                    print(f"Error during upsert: {e}")
         else:
             print(f"Loading Not Enabled for {table_name}")
     # Close cursor and connection
@@ -186,3 +355,82 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

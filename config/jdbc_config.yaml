@@ -1,0 +1,59 @@
+mysql_conn_id:
+    engine: "mysql"
+    host: "localhost"
+    port: "3306"
+    dbname: "dbname"
+    user: "root"
+    password: "root"
+    driver: "com.mysql.cj.jdbc.Driver"
+    jdbc_url: "jdbc:mysql://localhost:3306/dbname"
+    service_name: ""
+  
+oracle_conn_id:
+    engine: "oracle"
+    host: "localhost"
+    port: "1521"
+    dbname: "dbname"
+    user: "root"
+    password: "root"
+    driver: "oracle.jdbc.driver.OracleDriver"
+    jdbc_url: "jdbc:oracle:thin:@localhost:1521:dbname"
+    service_name: "dbname"
+
+postgres_conn_id:
+    engine: "postgres"
+    host: "localhost"
+    port: "5432"
+    dbname: "dbname"
+    user: "root"
+    password: "root"
+    driver: "org.postgresql.Driver"
+    jdbc_url: "jdbc:postgresql://localhost:5432/dbname"
+  
+sqlserver_conn_id:
+    engine: "sqlserver"
+    host: "localhost"
+    port: "1433"
+    dbname: "dbname"
+    user: "root"
+    password: "root"
+    driver: "com.microsoft.sqlserver.jdbc.SQLServerDriver"
+    jdbc_url: "jdbc:sqlserver://localhost:1433;databaseName=dbname"
+
+snowflake_conn_id:
+    engine: "snowflake"
+    account: "account"
+    user: "root"
+    password: "root"
+    driver: "net.snowflake.client.jdbc.SnowflakeDriver"
+    jdbc_url: "jdbc:snowflake://account.snowflakecomputing.com/"
+    warehouse: "warehouse"
+    database: "dbname"
+    schema: "schema"
+    role: "role"
+
+redshift_conn_id:
+    engine: "redshift"
+    host: "localhost"
+    port: "5439"
+    dbname: "dbname"

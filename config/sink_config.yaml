@@ -1,0 +1,10 @@
+mysql_conn_id:
+    engine: "mysql"
+    host: "localhost"
+    port: "3306"
+    dbname: "dbname"
+    user: "bhargav"
+    password: "manager"
+    driver: "com.mysql.cj.jdbc.Driver"
+    jdbc_url: "jdbc:mysql://localhost:3306/dbname"
+    service_name: "na"

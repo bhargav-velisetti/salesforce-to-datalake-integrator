@@ -1,0 +1,49 @@
+sfdc_config:
+  conn_id: "sfdc_conn_id"
+  config_path: "config/sfdc_config.yaml"
+  config_type: "plain_text"
+  metadata:
+    allowed_config_types: ["plain_text", "gcp_secret_manager", "aws_secrets_manager", "azure_key_vault"]  
+
+sink_config:
+  conn_id: "mysql_conn_id"
+  config_path: "config/sink_config.yaml"
+  config_type: "plain_text"
+  metadata:
+    allowed_config_types: ["plain_text", "gcp_secret_manager", "aws_secrets_manager", "azure_key_vault"]
+
+metadata:
+    allowed_primary_keys: ["id"]
+    allowed_full_replication_types: ["truncate_reload", "TR","overwrite", "full"]
+    allowed_incremental_replication_types: ["append", "incremental"]
+    allowed_replication_keys: ["lastmodifieddate"]
+
+replication_config:
+  config_dbname: "dbname"
+  config_schema: "schema"
+
+tables:
+
+  account:
+    sfdc_table: "Account"
+    replication_type: "full"
+    sink_dbname: "dbname"
+    sink_schema: "schema"
+    sink_table: "account"
+    replication_key: "lastmodifieddate"
+    primary_key: "id"
+    query: "SELECT Id, Name FROM Account"
+    filter: "WHERE lastmodifieddate > '2021-01-01T00:00:00Z'" # Not implemented Yet.
+
+  contact:
+    sfdc_table: "contact"
+    replication_type: "full"
+    sink_dbname: "dbname"
+    sink_schema: "schema"
+    sink_table: "account"
+    replication_key: "lastmodifieddate"
+    primary_key: "id"
+    query: "SELECT * FROM Account"
+    filter: "WHERE lastmodifieddate > '2021-01-01T00:00:00Z'" # Not implemented Yet.
+
+

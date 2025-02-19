@@ -16,6 +16,8 @@ def main( config : dict, logger ):
     sfdc_config = get_config( config['sfdc_config'] )
     sink_config = get_config( config['sink_config'] )
 
+    print('type is => ' , sink_config['dbname'])
+
     logger.debug(f"SFDC Config: {sfdc_config}")
     logger.debug(f"Sink Config: {sink_config}")
 
@@ -32,7 +34,8 @@ def main( config : dict, logger ):
         query = config['tables'][table]['query']
         replication_type = config['tables'][table]['replication_type']
 
-        dbhelper = DBHelper(**sink_config)
+        dbhelper = DBHelper(sink_config)
+
         salesforceapihelper = SlaesforceAPIHelper(instance_url, bearer_token)
 
         if replication_type in config['metadata']['allowed_full_replication_types']:

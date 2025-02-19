@@ -4,21 +4,16 @@ import pandas as pd
 from pandas import DataFrame
 
 class DBHelper:
-    def __init__(self, **db_config):
-        self.engine = db_config['engine']
-        self.dbname=db_config['dbname'],
-        self.user=db_config['user'],
-        self.password=db_config['password'],
-        self.host=db_config['host'],
-        self.port=db_config['port']
-        self.service_name=db_config.get('service_name', 'NA')
+    def __init__(self, db_config : dict):
+        for key, value in db_config.items():
+            setattr(self, key, value)
 
     def create_engine(self) -> sqlalchemy.engine.base.Connection:
         if self.engine == 'mysql':
             return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/{self.dbname}")
         elif self.engine == 'postgresql':
-            print(self.host[0], self.user[0], self.password[0], self.port, self.dbname[0])
-            return sqlalchemy.create_engine(f"{self.engine}://{self.user[0]}:{self.password[0]}@{self.host[0]}:{self.port}/{self.dbname[0]}")
+            print(self.host, self.user, self.password, self.port, self.dbname)
+            return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/{self.dbname}")
         elif self.engine == 'oracle+oracledb':
             return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/?service_name={self.service_name}")
         elif self.engine == 'mssql+pymssql':

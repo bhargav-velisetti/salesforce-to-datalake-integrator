@@ -1,9 +1,9 @@
-mysql_conn_id:
-    engine: "mysql"
+postgresql_conn_id:
+    engine: "postgresql"
     host: "localhost"
-    port: "3306"
-    dbname: "dbname"
-    user: "bhargav"
-    password: "manager"
-    driver: "com.mysql.cj.jdbc.Driver"
-    jdbc_url: "jdbc:mysql://localhost:3306/dbname"
+    port: "5432"
+    dbname: "ELT"
+    user: "stagereader"
+    password: "elt-framework"
+    driver: "org.postgresql.Driver"
+    jdbc_url: "jdbc:postgresql://localhost:5432/elt"

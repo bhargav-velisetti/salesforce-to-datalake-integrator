@@ -17,7 +17,8 @@ class DBHelper:
         if self.engine == 'mysql':
             return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/{self.dbname}")
         elif self.engine == 'postgresql':
-            return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/{self.dbname}")
+            print(self.host[0], self.user[0], self.password[0], self.port, self.dbname[0])
+            return sqlalchemy.create_engine(f"{self.engine}://{self.user[0]}:{self.password[0]}@{self.host[0]}:{self.port}/{self.dbname[0]}")
         elif self.engine == 'oracle+oracledb':
             return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/?service_name={self.service_name}")
         elif self.engine == 'mssql+pymssql':
@@ -27,8 +28,10 @@ class DBHelper:
             raise ValueError(f"Unsupported engine: {self.engine}")
 
     def db_execute(self, query):
-        with self.create_engine() as conn:
-            conn.execute(query)
+        #print(self.host)
+        engine = self.create_engine()
+        with engine.connect() as conn:
+            conn.execute(sqlalchemy.text(query))  # Use sqlalchemy.text() for raw SQL execution
             conn.commit()
 
     def flush_table(self, table_name):

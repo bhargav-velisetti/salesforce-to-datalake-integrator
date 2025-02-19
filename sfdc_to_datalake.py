@@ -42,9 +42,8 @@ def main( config : dict, logger ):
 
             dbhelper.flush_table(sink_table)
 
-            bulk_job = salesforceapihelper.submit_sfdc_bulk_request(query)
+            bulk_job = salesforceapihelper.submit_sfdc_bulk_request(query).json()
             logger.debug(f"Bulk Job: {bulk_job}")
-
             queryJobId = bulk_job['id']
             salesforceapihelper.wait_until_bulk_job_is_completed(queryJobId)
 
@@ -54,7 +53,7 @@ def main( config : dict, logger ):
 
             logger.debug(f'{queryJobId} result pages are {resultpages}')
 
-            if isinstance(resultpages) == 'list':
+            if isinstance(resultpages, list):
                 chunkd_result_pages = chunk_list(resultpages, parallelism) # [1,2,3,4,5] -> [ [1,2], [3,4], [5]]
             else:
                 # comeup with the single result page code
@@ -76,14 +75,13 @@ def main( config : dict, logger ):
 
 
 if __name__ == '__main__':
-   
 
     repl_conf_path = parse_args()
 
+    print(repl_conf_path)
     logger = get_logger('stdout_logger')
     logger.debug(f"Replication Config file path: {repl_conf_path}")
 
     with open(repl_conf_path, 'r') as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
-    
         main(config, logger)

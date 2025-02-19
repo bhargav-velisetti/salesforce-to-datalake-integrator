@@ -2,6 +2,7 @@ import requests
 import pandas as pd 
 from pandas import DataFrame
 import requests
+import json
 import time 
 import asyncio
 import aiohttp
@@ -128,15 +129,17 @@ class SlaesforceAPIHelper:
         return requests.delete(url, headers=headers) 
     
     # Get BULK API Request Result Pages
-    def fetch_sfdc_bulkapi_resultpages(self, queryJobId: str) -> list:
+    def fetch_sfdc_bulkapi_resultpages(self, queryJobId: str, parallelism : int) -> list:
         url = f"{self.instance_url}/services/data/{self.api_version}/jobs/query/{queryJobId}/resultPages"
 
         headers = {
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {self.bearer_token}",
                 }
-        
-        return requests.get(url=url, headers=headers).content.decode()['resultPages']
+        req = requests.get(url=url, headers=headers).json()
+        print(req)
+        #requests.get(url=url, headers=headers).content.decode()['resultPages']
+        return req
     
     # Make get call with aiohttp
     async def async_api_get_call(self,session: ClientSession, url: str) -> str:

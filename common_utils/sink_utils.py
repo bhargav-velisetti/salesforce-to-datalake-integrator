@@ -11,7 +11,7 @@ class DBHelper:
         self.password=db_config['password'],
         self.host=db_config['host'],
         self.port=db_config['port']
-        self.service_name=db_config['service_name']
+        self.service_name=db_config.get('service_name', 'NA')
 
     def create_engine(self) -> sqlalchemy.engine.base.Connection:
         if self.engine == 'mysql':

@@ -30,7 +30,8 @@ def main( config : dict, logger ):
         logger.debug(f"Table: {table}")
 
         sfdc_table = config['tables'][table]['sfdc_table']
-        sink_table = f"{config['tables'][table]['sink_schema']}.{config['tables'][table]['sfdc_table']}"
+        sink_schema = f"{config['tables'][table]['sink_schema']}"  # NEW VARIABLE
+        sink_table = f"{config['tables'][table]['sink_table']}"     # REMOVED SCHEMA NAME FROM TABLENAME
         query = config['tables'][table]['query']
         replication_type = config['tables'][table]['replication_type']
 
@@ -67,10 +68,8 @@ def main( config : dict, logger ):
             for chunk in chunkd_result_pages:
 
                 df = salesforceapihelper.fetch_sfdc_bulkapi_results(chunk)
-
-                
-
-                dbhelper.pd_insert_into_table(sink_table)
+                logger.debug(f'Df records recieved for {chunk}: Len={len(df)}, records={df}')
+                dbhelper.pd_insert_into_table(sink_table, df)
 
         else:
             

@@ -23,22 +23,26 @@ class DBHelper:
             raise ValueError(f"Unsupported engine: {self.engine}")
 
     def db_execute(self, query):
-        #print(self.host)
         engine = self.create_engine()
         with engine.connect() as conn:
             conn.execute(sqlalchemy.text(query))  # Use sqlalchemy.text() for raw SQL execution
             conn.commit()
 
-    def flush_table(self, table_name):
-        # Check if table exists logic to be impleemnted
-        query = f"TRUNCATE TABLE {table_name}"
+    def flush_table(self, table_name):  # WORKING ON RN
+        # SINK needs to be dropped in case query is changing (col number is different)
+        # Check if table exists logic to be implemnted
+        query = f"DROP TABLE IF EXISTS sfdc_stage.{table_name} CASCADE;"  ## CHANGE AND FIGURE OUT TO PASS SCHEMA NAME
         self.db_execute(query)
+        """query = f"TRUNCATE TABLE {table_name}"
+        self.db_execute(query)"""
 
     def pd_insert_into_table(self, table_name : list , records : list ):
-        with self.create_engine() as conn:
+        print(len(records), records)
+        engine = self.create_engine()
+        with engine.connect() as conn:
             try:
                 data = pd.DataFrame(records)
-                data.to_sql(table_name, conn, if_exists='append', index=False)
+                data.to_sql(table_name, conn, schema='sfdc_stage', if_exists='append', index=False)
                 return True  # Indicating success
             except Exception as e:
                 print(f"Error inserting data: {e}")

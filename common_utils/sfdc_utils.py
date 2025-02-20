@@ -102,7 +102,7 @@ class SlaesforceAPIHelper:
         logger = get_logger('stdout_logger')
         i = 0
         while True:
-            time.sleep(60)
+            time.sleep(10) # CHANGE BACK TO 60 BEFORE PROD
             i += 60
             response = self.get_sfdc_bulk_job_status(queryJobId)
             response_json = response.json()
@@ -131,31 +131,38 @@ class SlaesforceAPIHelper:
     # Get BULK API Request Result Pages
     def fetch_sfdc_bulkapi_resultpages(self, queryJobId: str, parallelism : int) -> list:
         url = f"{self.instance_url}/services/data/{self.api_version}/jobs/query/{queryJobId}/resultPages"
-
+        pageList = []
         headers = {
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {self.bearer_token}",
                 }
         req = requests.get(url=url, headers=headers).json()
-        print(req)
-        #requests.get(url=url, headers=headers).content.decode()['resultPages']
-        return req
+        pageList.extend([req['resultChunks'][i] for i in range(0, len(req['resultChunks']), 1)])
+        for i in range(0, len(pageList)):
+            pageList[i] = self.instance_url + f'/services/data/{self.api_version}' + pageList[i]['resultLink']
+        print(pageList)
+        return pageList
     
     # Make get call with aiohttp
     async def async_api_get_call(self,session: ClientSession, url: str) -> str:
-        async with await session.get(url, ssl= False) as response:
+        headers = { "Authorization": f"Bearer {self.bearer_token}",
+                    "Content-Type": "application/json",
+                    "Accept": "text/csv"
+                  } # Bulk API returns CSV }
+        async with await session.get(url, headers=headers, ssl= False) as response:
             response.raise_for_status()
             return await response.text()
 
     async def get_chunkd_url_response(self, urls : list) -> pd.DataFrame:
-        async with aiohttp.ClientSession as session:
+        print(urls)
+        async with aiohttp.ClientSession() as session:
             tasks = []
             for url in urls:
                 # Creates asyncio.Task that will return a future 
                 task = asyncio.create_task(
                     coro=self.async_api_get_call(
                         session=session,
-                        url = url,
+                        url = url
                     )
                 )
                 tasks.append(task)
@@ -167,13 +174,11 @@ class SlaesforceAPIHelper:
             for i in result:
                 df = pd.read_csv(io.StringIO(i))
                 dfs.append(df)
-
             df_concat = pd.concat(dfs, ignore_index=True)
-
             return df_concat
 
         
     # Extract Data from SFDC with BULK API 2.0
     def fetch_sfdc_bulkapi_results(self, result_pages : list) -> pd.DataFrame:
-
-        asyncio.run(self.get_chunkd_url_response(urls = result_pages)) 
+        df = asyncio.run(self.get_chunkd_url_response(urls = result_pages))
+        return df

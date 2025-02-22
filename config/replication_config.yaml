@@ -27,12 +27,12 @@ tables:
   account:
     sfdc_table: "account"
     replication_type: "full"
-    sink_dbname: "elt"
+    sink_dbname: "etl"
     sink_schema: "sfdc_stage"
     sink_table: "account"
     replication_key: "lastmodifieddate"
     primary_key: "id"
-    query: "SELECT Id, Name FROM Account"
+    query: "SELECT Id, Name, isdeleted, lastmodifieddate FROM Account"
     filter: "WHERE lastmodifieddate > '2021-01-01T00:00:00Z'" # Not implemented Yet.
 
   contact:
@@ -43,7 +43,7 @@ tables:
     sink_table: "contact"
     replication_key: "lastmodifieddate"
     primary_key: "id"
-    query: "SELECT Id, Name FROM Contact"
+    query: "SELECT Id, Name, isdeleted, lastmodifieddate FROM Contact"
     filter: "WHERE lastmodifieddate > '2021-01-01T00:00:00Z'" # Not implemented Yet.
 
 

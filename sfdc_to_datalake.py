@@ -8,7 +8,8 @@ from common_utils.helper import parse_args, get_config , chunk_list
 from common_utils.logger import get_logger
 from common_utils.sfdc_utils import get_bearertoken_and_instanceurl, SlaesforceAPIHelper
 from common_utils.sink_utils import DBHelper
-import  logging 
+import  logging
+
 
 
 def main( config : dict, logger ):
@@ -21,6 +22,7 @@ def main( config : dict, logger ):
     logger.debug(f"SFDC Config: {sfdc_config}")
     logger.debug(f"Sink Config: {sink_config}")
 
+
     for table in config['tables']:
 
         bearer_token , instance_url = get_bearertoken_and_instanceurl(**sfdc_config)
@@ -30,12 +32,19 @@ def main( config : dict, logger ):
         logger.debug(f"Table: {table}")
 
         sfdc_table = config['tables'][table]['sfdc_table']
+        sink_db=f"{config['tables'][table]['sink_dbname']}"
         sink_schema = f"{config['tables'][table]['sink_schema']}"  # NEW VARIABLE
         sink_table = f"{config['tables'][table]['sink_table']}"     # REMOVED SCHEMA NAME FROM TABLENAME
         query = config['tables'][table]['query']
         replication_type = config['tables'][table]['replication_type']
+        logger.debug(f"sink Schema : {sink_schema}")
+        logger.debug(f"sink Table : {sink_table}")
+        logger.debug(f"Query : {query}")
 
-        dbhelper = DBHelper(sink_config)
+        sink_config["sink_db"]= sink_db
+        sink_config["sink_schema"] =sink_schema
+        sink_config["sink_table"] =sink_table
+        dbhelper = DBHelper(sink_config,logger)
 
         salesforceapihelper = SlaesforceAPIHelper(instance_url, bearer_token)
 

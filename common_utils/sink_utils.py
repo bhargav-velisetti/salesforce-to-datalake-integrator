@@ -7,6 +7,9 @@ import datetime
 
 class DBHelper:
     def __init__(self, sink_config : dict, rep_config : dict, logger):
+        '''
+        Initilizing DBHelper class with sink and replication configs
+        '''
         self.logger = logger
         logger.debug(f"\tInitializing DBHelper with:")
         self.logger.debug(f"\tSink Configs: {sink_config}")
@@ -17,7 +20,11 @@ class DBHelper:
         for key, value in rep_config.items():
             setattr(self, key, value)
 
+
     def create_update_checkpoint(self):
+        '''
+        This function will create db, schema, checkpoint table  based on replication config config_dbname, config_schema, config_table
+        '''
         self.Create_DB(self.config_dbname)
         create_schema_query = f"create schema if not exists {self.config_schema};"
         self.logger.debug(f"\t\tTrying to create config schema : {self.config_schema}")
@@ -26,13 +33,16 @@ class DBHelper:
                         trg_tbl_nm VARCHAR(255) PRIMARY KEY,
                         last_fetch_ts TIMESTAMP WITH TIME ZONE DEFAULT '0001-01-01 00:00:00 UTC' -- Oldest possible timestamp
                         );"""
-
         self.logger.debug(f"\t\tTrying to create config table : {self.config_table}")
         self.db_execute(create_table_query,self.config_dbname)
 
 
 
-    def last_fetch_ts(self,table_name : str):
+    def last_fetch_ts(self, table_name : str):
+        '''
+        Retrieves the last fetch timestamp for a given table from the checkpoint table.
+        Returns a default old timestamp if the table or checkpoint doesn’t exist.
+        '''
         try:
             query = f"select last_fetch_ts from {self.config_schema}.{self.config_table} where trg_tbl_nm='{table_name}_test'"
             engine = self.create_engine(self.config_dbname)
@@ -45,9 +55,6 @@ class DBHelper:
             # Return oldest value for Full Load
             return datetime.datetime(1900, 1, 1, tzinfo=datetime.timezone.utc)
 
-
-
-
     def update_timestamp(self,table : str ,last_fetch_ts : datetime.datetime):
         try:
             update_chek_query = f"""INSERT INTO {self.config_schema}.{self.config_table} (trg_tbl_nm, last_fetch_ts) 
@@ -59,6 +66,10 @@ class DBHelper:
             self.logger.debug(f" {self.config_schema}.{self.config_table} not exist")
 
     def create_engine(self, target_db_par: str = None) -> sqlalchemy.engine.base.Connection:
+        '''
+        Creates a database engine based on the sink type (e.g., MySQL, PostgreSQL).
+        Uses the default dbname from config unless a specific database is provided.
+        '''
         target_db = self.dbname
         if target_db_par is not None:
             target_db = target_db_par
@@ -79,6 +90,10 @@ class DBHelper:
             raise ValueError(f"Unsupported engine: {self.engine}")
 
     def db_execute(self, query, target_db_par: str = None):
+        '''
+        Runs a SQL query and commits it to the specified database (or default from config if none provided).
+        Ensures a commit happens even for schema changes.
+        '''
         db_name = self.dbname
         if target_db_par is not None:
             db_name = target_db_par
@@ -89,6 +104,9 @@ class DBHelper:
             conn.commit()
 
     def Create_DB(self,db_name : str):
+        '''
+        Creates Database in appropriate sink such as postgresql,mysql,..
+        '''
         if self.engine=="postgresql":
             # Create the database if it does not exist
             try:
@@ -102,16 +120,22 @@ class DBHelper:
             return False
 
     def flush_table(self, table_name):  # WORKING ON RN
-        # SINK needs to be dropped in case query is changing (col number is different)
-        # Check if table and schema exists logic to be implemnted
+        '''
+        Creates Schema and drop table if exists
+        '''
         self.Create_DB(self.sink_db)
         create_schema_query = f"create schema if not exists {self.sink_schema};"
-        drop_query = f"DROP TABLE IF EXISTS {self.sink_schema}.{table_name} CASCADE;"  ## CHANGE AND FIGURE OUT TO PASS SCHEMA NAME
+        drop_query = f"DROP TABLE IF EXISTS {self.sink_schema}.{table_name} CASCADE;"
         self.db_execute(create_schema_query,self.sink_db)
         self.db_execute(drop_query,self.sink_db)
 
 
     def pd_insert_into_table(self, table_name : list , records : list ):
+        '''
+        1. converts records into pandas dataframe and writes to provided table name
+        2. update the timestamp of the table to current time
+        3. If success returns True else False.
+        '''
         self.logger.debug(f"\t\tStarting Insertion of : {len(records)} rows...")
         engine = self.create_engine(self.sink_db)
         with engine.connect() as conn:

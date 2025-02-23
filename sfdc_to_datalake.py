@@ -13,6 +13,10 @@ import  logging
 
 
 def main( config : dict, logger ):
+    '''
+    Main function to orchestrate data replication from Salesforce to a sink database.
+    Handles both full and incremental loads for each table in the config.
+    '''
 
     sfdc_config = get_config( config['sfdc_config'] )
     sink_config = get_config( config['sink_config'] )
@@ -22,12 +26,13 @@ def main( config : dict, logger ):
     logger.debug(f"Sink Config: {sink_config}")
 
     for table in config['tables']:
+        # Get Salesforce credentials and initialize helpers
         bearer_token , instance_url = get_bearertoken_and_instanceurl(**sfdc_config)
 
         logger.debug(f"Bearer Token: {bearer_token}")
         logger.debug(f"Instance URL: {instance_url}")
         logger.debug(f"Processing Table: {table}")
-
+        # Extract table-specific details
         sfdc_table  = config['tables'][table]['sfdc_table']
         sink_db     = f"{config['tables'][table]['sink_dbname']}"
         sink_schema = f"{config['tables'][table]['sink_schema']}"
@@ -43,18 +48,26 @@ def main( config : dict, logger ):
         sink_config["sink_schema"] = sink_schema
         sink_config["sink_table"]  = sink_table
 
+        # initializing DBHelper object
         dbhelper = DBHelper(sink_config,rep_config, logger)
 
+        sink_config["sink_db"]= sink_db
+        sink_config["sink_schema"] =sink_schema
+        sink_config["sink_table"] =sink_table
+
+        dbhelper = DBHelper(sink_config, rep_config, logger)
         salesforceapihelper = SlaesforceAPIHelper(instance_url, bearer_token)
 
         logger.debug(f"\tChecking if Config DB exists or Not. If not Trying to create it")
         dbhelper.create_update_checkpoint()
 
+        # Updating Query based on load type
         if replication_type in config['metadata']['allowed_full_replication_types']:
             logger.debug("\tStarting Full Replication")
 
         elif replication_type in config['metadata']['allowed_incremental_replication_types']:
             logger.debug("\tStarting Incremental Replication")
+            # fetching the last time stamp and converting it into iso format.
             last_ts = dbhelper.last_fetch_ts(table)
             last_ts_iso=last_ts.isoformat()
             query = query + f" WHERE  {replication_key}> {last_ts_iso}"
@@ -62,6 +75,7 @@ def main( config : dict, logger ):
 
         logger.debug(f"\tUsing Query to fetch from salesforce : {query}")
 
+        # Submit and process job with bulk api
         bulk_job = salesforceapihelper.submit_sfdc_bulk_request(query).json()
         logger.debug(f"Bulk Job: {bulk_job}")
         queryJobId = bulk_job['id']
@@ -78,6 +92,8 @@ def main( config : dict, logger ):
         else:
             # comeup with the single result page code
             chunkd_result_pages = ["single_page_url"]
+
+        # Clear table for full load
         if replication_type in config['metadata']['allowed_full_replication_types']:
             dbhelper.flush_table(sink_table)
 

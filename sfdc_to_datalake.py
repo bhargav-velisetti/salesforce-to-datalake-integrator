@@ -79,7 +79,7 @@ def main( config : dict, logger ):
 
 if __name__ == '__main__':
 
-    repl_conf_path = parse_args()
+    repl_conf_path , *_ = parse_args()
 
     print(repl_conf_path)
     logger = get_logger('stdout_logger')

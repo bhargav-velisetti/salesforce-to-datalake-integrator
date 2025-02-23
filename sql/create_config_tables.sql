@@ -4,22 +4,22 @@ CREATE SCHEMA IF NOT EXISTS sfdc_ingestion_config;
 CREATE SCHEMA IF NOT EXISTS sfdc_stage;
 
 -- Table 1: ing_tbl_list
-CREATE TABLE sfdc_ingestion_config.ing_tbl_list (
-    src_tbl_nm VARCHAR(255) PRIMARY KEY,
+create table  sfdc_ingestion_config.ing_tbl_list (
+    table_id VARCHAR(255) PRIMARY KEY,
+    src_tbl_nm VARCHAR(255)  NOT NULL,
     trg_schema VARCHAR(255) NOT NULL,
     trg_tbl_nm VARCHAR(255) NOT NULL,
     isenabled BOOLEAN DEFAULT TRUE,
     incr_col VARCHAR(255) -- e.g., LastModifiedDate
 );
-
 -- Table 2: ing_tbl_columns
 CREATE TABLE sfdc_ingestion_config.ing_tbl_columns (
+    table_id VARCHAR(255) PRIMARY KEY,
     src_tbl_nm VARCHAR(255),
     src_tbl_col VARCHAR(255),
     trg_tbl_nm VARCHAR(255),
     trg_tbl_col VARCHAR(255),
-    trg_col_type VARCHAR(50) DEFAULT 'VARCHAR(255)',
-    PRIMARY KEY (src_tbl_nm, src_tbl_col)
+    trg_col_type VARCHAR(50) DEFAULT 'VARCHAR(255)'
 );
 
 -- Table 3: ing_tbl_checkpoint

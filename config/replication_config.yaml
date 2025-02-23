@@ -6,8 +6,8 @@ sfdc_config:
     allowed_config_types: ["plain_text", "gcp_secret_manager", "aws_secrets_manager", "azure_key_vault"]  
 
 sink_config:
-  conn_id: "postgresql_conn_id"
-  config_path: "config/sink_config.yaml"
+  conn_id: "mysql_conn_id"
+  config_path: "config/sink_config_bv.yaml"
   config_type: "plain_text"
   metadata:
     allowed_config_types: ["plain_text", "gcp_secret_manager", "aws_secrets_manager", "azure_key_vault"]
@@ -19,8 +19,8 @@ metadata:
     allowed_replication_keys: ["lastmodifieddate"]
 
 replication_config:
-  config_dbname: "dbname"
-  config_schema: "schema"
+  config_dbname: "sfdc_ingestion_config"
+  config_schema: "sfdc_ingestion_config"
 
 tables:
 

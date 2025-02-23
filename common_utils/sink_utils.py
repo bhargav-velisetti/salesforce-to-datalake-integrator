@@ -2,13 +2,16 @@ import psycopg2
 import sqlalchemy
 import pandas as pd 
 from pandas import DataFrame
+from sqlalchemy import engine
+from sqlalchemy.engine import Connection
+from sqlalchemy.orm import Session
 
 class DBHelper:
     def __init__(self, db_config : dict):
         for key, value in db_config.items():
             setattr(self, key, value)
 
-    def create_engine(self) -> sqlalchemy.engine.base.Connection:
+    def db_create_engine(self) :
         if self.engine == 'mysql':
             return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/{self.dbname}")
         elif self.engine == 'postgresql':
@@ -22,11 +25,12 @@ class DBHelper:
             print("extend above if condition for other databases")
             raise ValueError(f"Unsupported engine: {self.engine}")
 
-    def db_execute(self, query):
+    def db_execute(self, query, arg = None):
         #print(self.host)
-        engine = self.create_engine()
+        engine : Connection = self.db_create_engine()
+
         with engine.connect() as conn:
-            conn.execute(sqlalchemy.text(query))  # Use sqlalchemy.text() for raw SQL execution
+            conn.execute(sqlalchemy.text(query), arg)  # Use sqlalchemy.text() for raw SQL execution
             conn.commit()
 
     def flush_table(self, table_name):

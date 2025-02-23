@@ -49,12 +49,6 @@ def main( config : dict, logger ):
         sink_config["sink_table"]  = sink_table
 
         # initializing DBHelper object
-        dbhelper = DBHelper(sink_config,rep_config, logger)
-
-        sink_config["sink_db"]= sink_db
-        sink_config["sink_schema"] =sink_schema
-        sink_config["sink_table"] =sink_table
-
         dbhelper = DBHelper(sink_config, rep_config, logger)
         salesforceapihelper = SlaesforceAPIHelper(instance_url, bearer_token)
 

@@ -13,28 +13,31 @@ import  logging
 
 
 def main( config : dict, logger ):
+    '''
+    Main function to orchestrate data replication from Salesforce to a sink database.
+    Handles both full and incremental loads for each table in the config.
+    '''
 
     sfdc_config = get_config( config['sfdc_config'] )
     sink_config = get_config( config['sink_config'] )
     rep_config  = get_config( config['replication_config'] )
-    print('type is => ' , sink_config['dbname'])
 
+    logger.debug(f"sink db : {sink_config['dbname']}")
     logger.debug(f"SFDC Config: {sfdc_config}")
     logger.debug(f"Sink Config: {sink_config}")
 
 
     for table in config['tables']:
-
+        # Get Salesforce credentials and initialize helpers
         bearer_token , instance_url = get_bearertoken_and_instanceurl(**sfdc_config)
-
         logger.debug(f"Bearer Token: {bearer_token}")
         logger.debug(f"Instance URL: {instance_url}")
         logger.debug(f"Table: {table}")
-
+        # Extract table-specific details
         sfdc_table = config['tables'][table]['sfdc_table']
         sink_db=f"{config['tables'][table]['sink_dbname']}"
-        sink_schema = f"{config['tables'][table]['sink_schema']}"  # NEW VARIABLE
-        sink_table = f"{config['tables'][table]['sink_table']}"     # REMOVED SCHEMA NAME FROM TABLENAME
+        sink_schema = f"{config['tables'][table]['sink_schema']}"
+        sink_table = f"{config['tables'][table]['sink_table']}"
         query = config['tables'][table]['query']
         replication_key=config['tables'][table]['replication_key']
         replication_type = config['tables'][table]['replication_type']
@@ -45,24 +48,26 @@ def main( config : dict, logger ):
         sink_config["sink_db"]= sink_db
         sink_config["sink_schema"] =sink_schema
         sink_config["sink_table"] =sink_table
-        dbhelper = DBHelper(sink_config,rep_config, logger)
 
-
+        # initilizing DBHelper object
+        dbhelper = DBHelper(sink_config, rep_config, logger)
         salesforceapihelper = SlaesforceAPIHelper(instance_url, bearer_token)
-
         dbhelper.create_update_checkpoint()
-        if replication_type in config['metadata']['allowed_full_replication_types']:
 
+        # Updating Query based on load type
+        if replication_type in config['metadata']['allowed_full_replication_types']:
+            # Full Load
             logger.debug("Full Replication")
         elif replication_type in config['metadata']['allowed_incremental_replication_types']:
+            # Incremental load
             logger.debug("Incremental Replication")
             last_ts = dbhelper.last_fetch_ts(table)
+            #fetching the last time stamp and converting it into iso format.
             last_ts_iso=last_ts.isoformat()
-            #logger.debug("Updating Query Incremental load")
             query = query + f" WHERE  {replication_key}> {last_ts_iso}"
             logger.debug(f"Query  : {query}")
             logger.debug(f"replication_key : {replication_key}  ,  last_ts_iso  {last_ts_iso}")
-
+        # Submit and process job with bulk api
         bulk_job = salesforceapihelper.submit_sfdc_bulk_request(query).json()
         logger.debug(f"Bulk Job: {bulk_job}")
         queryJobId = bulk_job['id']
@@ -79,11 +84,12 @@ def main( config : dict, logger ):
         else:
             # comeup with the single result page code
             chunkd_result_pages = ["single_page_url"]
+
+        # Clear table for full load
         if replication_type in config['metadata']['allowed_full_replication_types']:
             dbhelper.flush_table(sink_table)
 
         for chunk in chunkd_result_pages:
-
             df = salesforceapihelper.fetch_sfdc_bulkapi_results(chunk)
             logger.debug(f'Df records recieved for {chunk}: Len={len(df)}, records={df}')
             dbhelper.pd_insert_into_table(sink_table, df)
@@ -100,7 +106,6 @@ if __name__ == '__main__':
 
     repl_conf_path = parse_args()
 
-    print(repl_conf_path)
     logger = get_logger('stdout_logger')
     logger.debug(f"Replication Config file path: {repl_conf_path}")
 

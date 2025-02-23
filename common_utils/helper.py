@@ -2,6 +2,7 @@ import argparse
 import yaml
 
 def parse_args():
+    '''parses command line arguments'''
     # Create an ArgumentParser object
     parser = argparse.ArgumentParser(description="Returns Replication Config file path")
 
@@ -15,6 +16,9 @@ def parse_args():
     return args.replication_config
 
 def get_config(data : dict) -> dict:
+    '''
+    read configs based on the location of configs and retun them as a dict
+    '''
 
     print(data)
 

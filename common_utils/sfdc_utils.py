@@ -12,9 +12,13 @@ from common_utils.logger import get_logger
 
 
 
-# Get the bearer token AS WELL AS instance url from salesforce
-# Returns -> A tuple having structure like (token, url)
+
 def get_bearertoken_and_instanceurl(username, password, security_token, client_id, client_secret) -> tuple:
+    '''
+    Get the bearer token AS WELL AS instance url from salesforce
+    Returns -> A tuple having structure like (token, url)
+
+    '''
     auth_url = "https://login.salesforce.com/services/oauth2/token"
     auth_data = {
         "grant_type":"password",
@@ -61,7 +65,6 @@ class SlaesforceAPIHelper:
         return pd.DataFrame(records)
 
     # Submit the job with BULK API 2.0
-    # Use it for Full load
     def submit_sfdc_bulk_request(self, query: str):
         """
         Submits a bulk request to Salesforce using the REST API.
@@ -102,7 +105,7 @@ class SlaesforceAPIHelper:
         logger = get_logger('stdout_logger')
         i = 0
         while True:
-            time.sleep(10) # CHANGE BACK TO 60 BEFORE PROD
+            time.sleep(60)
             i += 60
             response = self.get_sfdc_bulk_job_status(queryJobId)
             response_json = response.json()
@@ -130,6 +133,10 @@ class SlaesforceAPIHelper:
     
     # Get BULK API Request Result Pages
     def fetch_sfdc_bulkapi_resultpages(self, queryJobId: str, parallelism : int) -> list:
+        '''
+        Fetch bulk api results pages and retun them as a list
+
+        '''
         url = f"{self.instance_url}/services/data/{self.api_version}/jobs/query/{queryJobId}/resultPages"
         pageList = []
         headers = {
@@ -140,7 +147,6 @@ class SlaesforceAPIHelper:
         pageList.extend([req['resultChunks'][i] for i in range(0, len(req['resultChunks']), 1)])
         for i in range(0, len(pageList)):
             pageList[i] = self.instance_url + f'/services/data/{self.api_version}' + pageList[i]['resultLink']
-        print(pageList)
         return pageList
     
     # Make get call with aiohttp
@@ -154,6 +160,9 @@ class SlaesforceAPIHelper:
             return await response.text()
 
     async def get_chunkd_url_response(self, urls : list) -> pd.DataFrame:
+        '''
+        Fetches data from multiple URLs asynchronously and combines them into a single DataFrame.
+        '''
         print(urls)
         async with aiohttp.ClientSession() as session:
             tasks = []

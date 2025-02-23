@@ -15,9 +15,6 @@ def parse_args():
     return args.replication_config
 
 def get_config(data : dict) -> dict:
-
-    print(data)
-
     conn_id = data['conn_id']
 
     if data['config_type'] == 'plain_text':

@@ -1,28 +1,33 @@
 import psycopg2
 import sqlalchemy
-import pandas as pd 
+import pandas as pd
 from pandas import DataFrame
 from sqlalchemy.exc import ProgrammingError
 import datetime
+
 class DBHelper:
     def __init__(self, sink_config : dict, rep_config : dict, logger):
-        self.logger=logger
-        logger.debug(f" sink_configgg : {sink_config}")
+        self.logger = logger
+        logger.debug(f"\tInitializing DBHelper with:")
+        self.logger.debug(f"\tSink Configs: {sink_config}")
+        self.logger.debug(f"\tReplication Configs: {rep_config}")
+
         for key, value in sink_config.items():
             setattr(self, key, value)
-        logger.debug(f"replication config : {rep_config}")
         for key, value in rep_config.items():
             setattr(self, key, value)
-
 
     def create_update_checkpoint(self):
         self.Create_DB(self.config_dbname)
         create_schema_query = f"create schema if not exists {self.config_schema};"
+        self.logger.debug(f"\t\tTrying to create config schema : {self.config_schema}")
         self.db_execute(create_schema_query, self.config_dbname)
         create_table_query=f"""CREATE TABLE if not exists {self.config_schema}.{self.config_table} (
                         trg_tbl_nm VARCHAR(255) PRIMARY KEY,
                         last_fetch_ts TIMESTAMP WITH TIME ZONE DEFAULT '0001-01-01 00:00:00 UTC' -- Oldest possible timestamp
                         );"""
+
+        self.logger.debug(f"\t\tTrying to create config table : {self.config_table}")
         self.db_execute(create_table_query,self.config_dbname)
 
 
@@ -36,8 +41,10 @@ class DBHelper:
                 self.logger.debug(f"last_ts : {last_ts[0]}")
             return last_ts[0]
         except ProgrammingError:
-            self.logger.debug(f"{self.config_dbname} {self.config_schema}.{self.config_table} not exist")
-            return datetime.datetime(1900, 1, 1, tzinfo=datetime.timezone.utc)      #return oldest value or Full Load
+            self.logger.debug(f"{self.config_dbname} {self.config_schema}.{self.config_table} does not exist")
+            # Return oldest value for Full Load
+            return datetime.datetime(1900, 1, 1, tzinfo=datetime.timezone.utc)
+
 
 
 
@@ -51,28 +58,30 @@ class DBHelper:
         except ProgrammingError:
             self.logger.debug(f" {self.config_schema}.{self.config_table} not exist")
 
-    def create_engine(self,db_par: str = None) -> sqlalchemy.engine.base.Connection:
-        DB_name=self.dbname
-        if db_par!=None:
-            DB_name=db_par
-        print("DB name in create engine ::: ", DB_name,self.sink_db)
+    def create_engine(self, target_db_par: str = None) -> sqlalchemy.engine.base.Connection:
+        target_db = self.dbname
+        if target_db_par is not None:
+            target_db = target_db_par
         if self.engine == 'mysql':
-            return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/{DB_name}")
+            self.logger.debug(f"\t\tCreating MySQL Engine for Target Database: {target_db}")
+            return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/{target_db}")
         elif self.engine == 'postgresql':
-            self.logger.debug(f"host : {self.host}, User: {self.user}, Password: {self.password}, Port: {self.port},DB_Name: {DB_name}")
-            return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/{DB_name}")
+            self.logger.debug(f"\t\tCreating Postgres Engine for Target Database: {target_db}")
+            return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/{target_db}")
         elif self.engine == 'oracle+oracledb':
             return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/?service_name={self.service_name}")
         elif self.engine == 'mssql+pymssql':
-            return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/{DB_name}")
+            self.logger.debug(f"\t\tCreating mssql+pymssql Engine for Target Database: {target_db}")
+            return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/{target_db}")
         else:
             print("extend above if condition for other databases")
+            self.logger.debug(f"\t\tUnsupported engine: {self.engine}")
             raise ValueError(f"Unsupported engine: {self.engine}")
 
-    def db_execute(self, query,db_par: str = None):
+    def db_execute(self, query, target_db_par: str = None):
         db_name = self.dbname
-        if db_par != None:
-            db_name = db_par
+        if target_db_par is not None:
+            db_name = target_db_par
         engine = self.create_engine(db_name)
         with engine.connect() as conn:
             conn.execute(sqlalchemy.text("COMMIT;"))
@@ -80,19 +89,19 @@ class DBHelper:
             conn.commit()
 
     def Create_DB(self,db_name : str):
-
         if self.engine=="postgresql":
             # Create the database if it does not exist
             try:
+                self.logger.debug(f"\t\tTRYING DATABASE CREATION : {db_name}")
                 self.db_execute(f"CREATE DATABASE {db_name}")
                 self.logger.debug(f"Created DataBase : {db_name}")
             except ProgrammingError:
-                self.logger.debug(f" DataBase : {db_name} already exists")
-
+                self.logger.debug(f"\t\tDataBase : {db_name} already exists, or some error was encountered while creating it.")
+        else:
+            print(f"Creating Databases not implemented yet for {self.engine}")
+            return False
 
     def flush_table(self, table_name):  # WORKING ON RN
-
-
         # SINK needs to be dropped in case query is changing (col number is different)
         # Check if table and schema exists logic to be implemnted
         self.Create_DB(self.sink_db)
@@ -103,14 +112,14 @@ class DBHelper:
 
 
     def pd_insert_into_table(self, table_name : list , records : list ):
-        self.logger.debug(f"No of rows: {len(records)}")
-        self.logger.debug(f"Records: {records}")
+        self.logger.debug(f"\t\tStarting Insertion of : {len(records)} rows...")
         engine = self.create_engine(self.sink_db)
         with engine.connect() as conn:
             try:
                 data = pd.DataFrame(records)
                 data.to_sql(table_name, conn, schema=self.sink_schema, if_exists='append', index=False)
                 self.update_timestamp(table_name,datetime.datetime.now())
+                self.logger.debug(f"\t\tSuccesssfully Completed!")
                 return True  # Indicating success
             except Exception as e:
                 print(f"Error inserting data: {e}")

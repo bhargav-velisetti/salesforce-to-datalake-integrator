@@ -17,51 +17,50 @@ def main( config : dict, logger ):
     sfdc_config = get_config( config['sfdc_config'] )
     sink_config = get_config( config['sink_config'] )
     rep_config  = get_config( config['replication_config'] )
-    print('type is => ' , sink_config['dbname'])
 
     logger.debug(f"SFDC Config: {sfdc_config}")
     logger.debug(f"Sink Config: {sink_config}")
 
-
     for table in config['tables']:
-
         bearer_token , instance_url = get_bearertoken_and_instanceurl(**sfdc_config)
 
         logger.debug(f"Bearer Token: {bearer_token}")
         logger.debug(f"Instance URL: {instance_url}")
-        logger.debug(f"Table: {table}")
+        logger.debug(f"Processing Table: {table}")
 
-        sfdc_table = config['tables'][table]['sfdc_table']
-        sink_db=f"{config['tables'][table]['sink_dbname']}"
-        sink_schema = f"{config['tables'][table]['sink_schema']}"  # NEW VARIABLE
-        sink_table = f"{config['tables'][table]['sink_table']}"     # REMOVED SCHEMA NAME FROM TABLENAME
-        query = config['tables'][table]['query']
-        replication_key=config['tables'][table]['replication_key']
+        sfdc_table  = config['tables'][table]['sfdc_table']
+        sink_db     = f"{config['tables'][table]['sink_dbname']}"
+        sink_schema = f"{config['tables'][table]['sink_schema']}"
+        sink_table  = f"{config['tables'][table]['sink_table']}"
+        query       = config['tables'][table]['query']
+        replication_key  = config['tables'][table]['replication_key']
         replication_type = config['tables'][table]['replication_type']
-        logger.debug(f"sink Schema : {sink_schema}")
-        logger.debug(f"sink Table : {sink_table}")
-        logger.debug(f"Query : {query}")
 
-        sink_config["sink_db"]= sink_db
-        sink_config["sink_schema"] =sink_schema
-        sink_config["sink_table"] =sink_table
+        logger.debug(f"Replication Type: {replication_type}")
+
+        # Adding Sink Database, Schema, and Table keys to sink_config dictionary
+        sink_config["sink_db"]     = sink_db
+        sink_config["sink_schema"] = sink_schema
+        sink_config["sink_table"]  = sink_table
+
         dbhelper = DBHelper(sink_config,rep_config, logger)
-
 
         salesforceapihelper = SlaesforceAPIHelper(instance_url, bearer_token)
 
+        logger.debug(f"\tChecking if Config DB exists or Not. If not Trying to create it")
         dbhelper.create_update_checkpoint()
-        if replication_type in config['metadata']['allowed_full_replication_types']:
 
-            logger.debug("Full Replication")
+        if replication_type in config['metadata']['allowed_full_replication_types']:
+            logger.debug("\tStarting Full Replication")
+
         elif replication_type in config['metadata']['allowed_incremental_replication_types']:
-            logger.debug("Incremental Replication")
+            logger.debug("\tStarting Incremental Replication")
             last_ts = dbhelper.last_fetch_ts(table)
             last_ts_iso=last_ts.isoformat()
-            #logger.debug("Updating Query Incremental load")
             query = query + f" WHERE  {replication_key}> {last_ts_iso}"
-            logger.debug(f"Query  : {query}")
-            logger.debug(f"replication_key : {replication_key}  ,  last_ts_iso  {last_ts_iso}")
+            logger.debug(f"\treplication_key : {replication_key}  ,  last_ts_iso  {last_ts_iso}")
+
+        logger.debug(f"\tUsing Query to fetch from salesforce : {query}")
 
         bulk_job = salesforceapihelper.submit_sfdc_bulk_request(query).json()
         logger.debug(f"Bulk Job: {bulk_job}")
@@ -72,7 +71,7 @@ def main( config : dict, logger ):
 
         resultpages = salesforceapihelper.fetch_sfdc_bulkapi_resultpages(queryJobId, parallelism)
 
-        logger.debug(f'{queryJobId} result pages are {resultpages}')
+        logger.debug(f'\t{queryJobId} result pages are {resultpages}')
 
         if isinstance(resultpages, list):
             chunkd_result_pages = chunk_list(resultpages, parallelism) # [1,2,3,4,5] -> [ [1,2], [3,4], [5]]
@@ -83,24 +82,16 @@ def main( config : dict, logger ):
             dbhelper.flush_table(sink_table)
 
         for chunk in chunkd_result_pages:
-
             df = salesforceapihelper.fetch_sfdc_bulkapi_results(chunk)
-            logger.debug(f'Df records recieved for {chunk}: Len={len(df)}, records={df}')
+            logger.debug(f'\tDf records received for {chunk}')
+            logger.debug(f"\tNumber of Rows recieved in Df = {len(df)}")
             dbhelper.pd_insert_into_table(sink_table, df)
-
-
-
-
-
-
-
 
 
 if __name__ == '__main__':
 
     repl_conf_path = parse_args()
 
-    print(repl_conf_path)
     logger = get_logger('stdout_logger')
     logger.debug(f"Replication Config file path: {repl_conf_path}")
 

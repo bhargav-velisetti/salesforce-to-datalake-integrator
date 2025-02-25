@@ -2,11 +2,12 @@ postgresql_conn_id:
     engine: "postgresql"
     host: "localhost"
     port: "5432"
-    dbname: "elt"
-    user: "postgres"
-    password: "123"
+    dbname: "ELT"
+    user: "stagereader"
+    password: "elt-framework"
     driver: "org.postgresql.Driver"
     jdbc_url: "jdbc:postgresql://localhost:5432/postgres"
+
 
 
 mysql_conn_id:

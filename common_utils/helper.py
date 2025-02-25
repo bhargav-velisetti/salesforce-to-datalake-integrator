@@ -20,8 +20,6 @@ def get_config(data : dict) -> dict:
     read configs based on the location of configs and retun them as a dict
     '''
 
-    print(data)
-
     conn_id = data['conn_id']
 
     if data['config_type'] == 'plain_text':

@@ -7,3 +7,19 @@ postgresql_conn_id:
     password: "123"
     driver: "org.postgresql.Driver"
     jdbc_url: "jdbc:postgresql://localhost:5432/postgres"
+
+
+mysql_conn_id:
+    engine: "mysql"
+    host: "localhost"
+    port: "3306"
+    dbname: "sfdc_stage"
+    user: "root"
+    password: "admin"
+    driver: "com.mysql.cj.jdbc.Driver"
+    jdbc_url: "jdbc:mysql://localhost:3306/dbname"
+
+replication_config:
+  config_dbname: "sfdc_config"
+  config_schema: "schema"
+  config_table: "checkpoint"

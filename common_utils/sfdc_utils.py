@@ -105,7 +105,7 @@ class SlaesforceAPIHelper:
         logger = get_logger('stdout_logger')
         i = 0
         while True:
-            time.sleep(60)
+            time.sleep(10)
             i += 60
             response = self.get_sfdc_bulk_job_status(queryJobId)
             response_json = response.json()

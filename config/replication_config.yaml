@@ -6,7 +6,7 @@ sfdc_config:
     allowed_config_types: ["plain_text", "gcp_secret_manager", "aws_secrets_manager", "azure_key_vault"]  
 
 sink_config:
-  conn_id: "postgresql_conn_id"
+  conn_id: "mysql_conn_id"
   config_path: "config/sink_config.yaml"
   config_type: "plain_text"
   metadata:
@@ -19,15 +19,17 @@ metadata:
     allowed_replication_keys: ["lastmodifieddate"]
 
 replication_config:
-  config_dbname: "dbname"
-  config_schema: "schema"
+  conn_id: "replication_config"
+  config_path: "config/sink_config.yaml"
+  config_type: "plain_text"
+
 
 tables:
 
   account:
     sfdc_table: "account"
     replication_type: "full"
-    sink_dbname: "etl"
+    sink_dbname: "sfdc_stage"
     sink_schema: "sfdc_stage"
     sink_table: "account"
     replication_key: "lastmodifieddate"
@@ -38,7 +40,7 @@ tables:
   contact:
     sfdc_table: "contact"
     replication_type: "full"
-    sink_dbname: "elt"
+    sink_dbname: "sfdc_stage"
     sink_schema: "sfdc_stage"
     sink_table: "contact"
     replication_key: "lastmodifieddate"

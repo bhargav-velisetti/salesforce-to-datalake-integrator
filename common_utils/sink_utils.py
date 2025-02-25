@@ -17,6 +17,9 @@ class DBHelper:
         logger.debug(f"replication config : {rep_config}")
         for key, value in rep_config.items():
             setattr(self, key, value)
+        if self.engine == "mysql":
+            self.schema = self.dbname
+            self.config_schema = self.config_dbname
 
 
     def create_update_checkpoint(self):
@@ -24,13 +27,21 @@ class DBHelper:
         This function will create db, schema, checkpoint table  based on replication config config_dbname, config_schema, config_table
         '''
         self.Create_DB(self.config_dbname)
-        create_schema_query = f"create schema if not exists {self.config_schema};"
-        self.db_execute(create_schema_query, self.config_dbname)
-        create_table_query=f"""CREATE TABLE if not exists {self.config_schema}.{self.config_table} (
-                        trg_tbl_nm VARCHAR(255) PRIMARY KEY,
-                        last_fetch_ts TIMESTAMP WITH TIME ZONE DEFAULT '0001-01-01 00:00:00 UTC' -- Oldest possible timestamp
-                        );"""
-        self.db_execute(create_table_query,self.config_dbname)
+        if self.engine == "postgresql":
+            create_schema_query = f"create schema if not exists {self.config_schema};"
+            self.db_execute(create_schema_query, self.config_dbname)
+            create_table_query=f"""CREATE TABLE if not exists {self.config_schema}.{self.config_table} (
+                            trg_tbl_nm VARCHAR(255) PRIMARY KEY,
+                            last_fetch_ts TIMESTAMP WITH TIME ZONE DEFAULT '0001-01-01 00:00:00 UTC' -- Oldest possible timestamp
+                            );"""
+            self.db_execute(create_table_query,self.config_dbname)
+        elif self.engine == "mysql":
+            create_table_query = f"""CREATE TABLE if not exists {self.config_dbname}.{self.config_table} (
+                                        trg_tbl_nm VARCHAR(255) PRIMARY KEY,
+                                        last_fetch_ts TIMESTAMP DEFAULT '1970-01-01 00:00:01' -- Oldest possible timestamp
+                                        );"""
+            self.db_execute(create_table_query, self.config_dbname)
+
 
 
 
@@ -60,10 +71,18 @@ class DBHelper:
         Uses an upsert to handle both new and existing entries.
         '''
         try:
-            update_chek_query = f"""INSERT INTO {self.config_schema}.{self.config_table} (trg_tbl_nm, last_fetch_ts) 
+            if self.engine=='postgresql':
+                update_chek_query = f"""INSERT INTO {self.config_schema}.{self.config_table} (trg_tbl_nm, last_fetch_ts) 
                 VALUES ('{table}', '{last_fetch_ts}')
                 ON CONFLICT (trg_tbl_nm) DO UPDATE 
                 SET last_fetch_ts = EXCLUDED.last_fetch_ts;"""
+            elif self.engine=='mysql':
+                update_chek_query = f"""
+                        INSERT INTO {self.config_schema}.{self.config_table} (trg_tbl_nm, last_fetch_ts) 
+                        VALUES ('{table}', '{last_fetch_ts}')
+                        ON DUPLICATE KEY UPDATE 
+                        last_fetch_ts = VALUES(last_fetch_ts);
+                    """
             self.db_execute(update_chek_query,self.config_dbname)
         except ProgrammingError:
             self.logger.debug(f" {self.config_schema}.{self.config_table} not exist")
@@ -110,7 +129,7 @@ class DBHelper:
         Creates Database in appropriate sink such as postgresql,mysql,..
         '''
 
-        if self.engine == "postgresql":
+        if self.engine == "postgresql" or self.engine == "mysql" :
             # Create the database if it does not exist
             try:
                 self.db_execute(f"CREATE DATABASE {db_name}")
@@ -119,15 +138,17 @@ class DBHelper:
                 self.logger.debug(f" DataBase : {db_name} already exists")
 
 
+
     def flush_table(self, table_name):
         '''
         Creates Schema and drop table if exists
         '''
 
         self.Create_DB(self.sink_db)
-        create_schema_query = f"create schema if not exists {self.sink_schema};"
-        drop_query = f"DROP TABLE IF EXISTS {self.sink_schema}.{table_name} CASCADE;"
-        self.db_execute(create_schema_query,self.sink_db)
+        if self.engine== "postgresql":
+            create_schema_query = f"create schema if not exists {self.sink_schema};"
+            self.db_execute(create_schema_query, self.sink_db)
+        drop_query = f"DROP TABLE IF EXISTS {self.sink_schema}.{table_name};"
         self.db_execute(drop_query,self.sink_db)
 
 

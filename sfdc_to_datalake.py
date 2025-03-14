@@ -18,7 +18,8 @@ def main( config : dict, logger ):
     Handles both full and incremental loads for each table in the config.
     '''
 
-    sfdc_config = get_config( config['sfdc_config'] )
+    sfdc_config,bulk_api_flag = get_config( config['sfdc_config'] )
+    print("--------",bulk_api_flag)
     sink_config = get_config( config['sink_config'] )
     rep_config  = get_config( config['replication_config'] )
 
@@ -48,6 +49,7 @@ def main( config : dict, logger ):
         sink_config["sink_schema"] = sink_schema
         sink_config["sink_table"]  = sink_table
 
+
         # initializing DBHelper object
         dbhelper = DBHelper(sink_config, rep_config, logger)
         salesforceapihelper = SlaesforceAPIHelper(instance_url, bearer_token)
@@ -63,39 +65,55 @@ def main( config : dict, logger ):
             logger.debug("\tStarting Incremental Replication")
             # fetching the last time stamp and converting it into iso format.
             last_ts = dbhelper.last_fetch_ts(table)
-            last_ts_iso=last_ts.isoformat()
+            last_ts_iso = last_ts.isoformat()
             query = query + f" WHERE  {replication_key}> {last_ts_iso}"
             logger.debug(f"\treplication_key : {replication_key}  ,  last_ts_iso  {last_ts_iso}")
+        else:
+            logger.debug("Please provide Valid ingestion type. Hint: full/incremental")
+            exit()
 
         logger.debug(f"\tUsing Query to fetch from salesforce : {query}")
-
-        # Submit and process job with bulk api
-        bulk_job = salesforceapihelper.submit_sfdc_bulk_request(query).json()
-        logger.debug(f"Bulk Job: {bulk_job}")
-        queryJobId = bulk_job['id']
-        salesforceapihelper.wait_until_bulk_job_is_completed(queryJobId)
-
-        parallelism = 2
-
-        resultpages = salesforceapihelper.fetch_sfdc_bulkapi_resultpages(queryJobId, parallelism)
-
-        logger.debug(f'\t{queryJobId} result pages are {resultpages}')
-
-        if isinstance(resultpages, list):
-            chunkd_result_pages = chunk_list(resultpages, parallelism) # [1,2,3,4,5] -> [ [1,2], [3,4], [5]]
-        else:
-            # comeup with the single result page code
-            chunkd_result_pages = ["single_page_url"]
 
         # Clear table for full load
         if replication_type in config['metadata']['allowed_full_replication_types']:
             dbhelper.flush_table(sink_table)
 
-        for chunk in chunkd_result_pages:
-            df = salesforceapihelper.fetch_sfdc_bulkapi_results(chunk)
-            logger.debug(f'\tDf records received for {chunk}')
+        if bulk_api_flag =="True":
+            # Submit and process job with bulk api
+            bulk_job = salesforceapihelper.submit_sfdc_bulk_request(query).json()
+            logger.debug(f"Bulk Job: {bulk_job}")
+            queryJobId = bulk_job['id']
+            salesforceapihelper.wait_until_bulk_job_is_completed(queryJobId)
+
+            parallelism = 2
+
+            resultpages = salesforceapihelper.fetch_sfdc_bulkapi_resultpages(queryJobId, parallelism)
+
+            logger.debug(f'\t{queryJobId} result pages are {resultpages}')
+
+            if isinstance(resultpages, list):
+                chunkd_result_pages = chunk_list(resultpages, parallelism) # [1,2,3,4,5] -> [ [1,2], [3,4], [5]]
+            else:
+                # comeup with the single result page code
+                chunkd_result_pages = ["single_page_url"]
+
+
+            for chunk in chunkd_result_pages:
+                df = salesforceapihelper.fetch_sfdc_bulkapi_results(chunk)
+                logger.debug(f'\tDf records received for {chunk}')
+                logger.debug(f"\tNumber of Rows recieved in Df = {len(df)}")
+                dbhelper.pd_insert_into_table(sink_table, df)
+        else:
+            logger.debug('Starting sync api call')
+            df = salesforceapihelper.fetch_data_from_sfdc_syncapi(query)
             logger.debug(f"\tNumber of Rows recieved in Df = {len(df)}")
             dbhelper.pd_insert_into_table(sink_table, df)
+
+
+
+
+
+
 
 
 if __name__ == '__main__':

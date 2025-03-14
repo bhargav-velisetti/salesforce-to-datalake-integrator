@@ -25,6 +25,10 @@ def get_config(data : dict) -> dict:
     if data['config_type'] == 'plain_text':
         with open(data['config_path'], 'r') as f:
             config = yaml.load(f, Loader=yaml.SafeLoader)
+            if 'bulk_api_flag' in data:
+                bulk_api_flag=''
+                bulk_api_flag = data['bulk_api_flag']
+                return config[conn_id], bulk_api_flag
             return config[conn_id]
         
     elif data['config_type'] == 'gcp_secret_manager':

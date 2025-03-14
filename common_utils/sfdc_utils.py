@@ -9,6 +9,7 @@ import aiohttp
 from aiohttp import ClientSession
 import io
 from common_utils.logger import get_logger
+from datetime import datetime
 
 
 
@@ -61,8 +62,16 @@ class SlaesforceAPIHelper:
             # Check if there's a nextRecordsUrl for pagination
             next_records_url = response_json.get("nextRecordsUrl")
             url = f"{self.instance_url}{next_records_url}" if next_records_url else None
+            # Convert the list of records to a DataFrame
+        df = pd.DataFrame(records)
 
-        return pd.DataFrame(records)
+        # Remove the 'attributes' column if it exists
+        if 'attributes' in df.columns:
+            print("Dropping Attribute column::")
+            df.drop(columns=['attributes'], inplace=True)
+        if len(df)!=0:
+            df['Loaded_timestamp'] = datetime.now()
+        return df
 
     # Submit the job with BULK API 2.0
     def submit_sfdc_bulk_request(self, query: str):
@@ -74,14 +83,14 @@ class SlaesforceAPIHelper:
                 "operation": "queryAll",
                 "query": query
             }
-        
+
         headers = {
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {self.bearer_token}",
                     "Accept": "application/json"
                 }
 
-        return requests.post(url, headers=headers, json=body) 
+        return requests.post(url, headers=headers, json=body)
 
     # Get the status of the bulk job
     def get_sfdc_bulk_job_status(self, queryJobId: str):

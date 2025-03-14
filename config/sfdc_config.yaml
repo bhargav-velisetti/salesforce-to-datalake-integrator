@@ -1,9 +1,10 @@
 sfdc_conn_id:
-  username: "bhargav.v@selectiva.com"
+  username: "bhargav.v@selectiva.com.dev"
   password: "AGTFfgtsde@1234"
-  security_token: "99QGgvg0MJTK1NsALpSRXg16"
-  client_id: "3MVG9XgkMlifdwVB60dyMz3jIc5E3QKxEemKvBq2SFoZgJ0QWZ0pP7Y8yulsw2t6i4O47sUXLt3awXekl_nIN"
-  client_secret: "AFCC3C3C0ACC9E3B76DDEF9562C9C07F7856234A03826FF8D8C1E472F0E59101"
+  security_token: "mP7VTDKWfM7V6kvB7pPYJUBl"
+  client_id: "3MVG9cyb9OsYZthKOXcu2NFtWLMxW6fYurZYrOQViZCUIPjlgxVBPSWdVE8JTYMRDqoTkV93Xaj81wtOqcNbh"
+  client_secret: "0A97F80905F358EB04467A603E7458630D927BEFA46F500755252E84CCEBB97D"
+
 
 another_sfdc_conn_id:
   username: "your_salesforce_username"
@@ -11,3 +12,6 @@ another_sfdc_conn_id:
   security_token: "your_salesforce_security_token"
   client_id: "your_salesforce_client_id"
   client_secret: "your_salesforce_client_secret"
+
+
+

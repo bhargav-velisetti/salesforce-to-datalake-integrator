@@ -56,7 +56,7 @@ class DBHelper:
         Returns a default old timestamp if the table or checkpoint doesn’t exist.
         '''
         try:
-            query = f"select last_fetch_ts from {self.config_schema}.{self.config_table} where trg_tbl_nm='{table_name}_test'"
+            query = f"select last_fetch_ts from {self.config_schema}.{self.config_table} where trg_tbl_nm='{table_name}'"
             engine = self.create_engine(self.config_dbname)
             with engine.connect() as conn:
                 last_ts=conn.execute(sqlalchemy.text(query)).fetchone()
@@ -69,6 +69,7 @@ class DBHelper:
 
     def update_timestamp(self,table : str ,last_fetch_ts : datetime.datetime):
         try:
+
             if self.engine=='postgresql':
                 update_chek_query = f"""INSERT INTO {self.config_schema}.{self.config_table} (trg_tbl_nm, last_fetch_ts) 
                 VALUES ('{table}', '{last_fetch_ts}')
@@ -170,7 +171,9 @@ class DBHelper:
             try:
                 data = pd.DataFrame(records)
                 data.to_sql(table_name, conn, schema=self.sink_schema, if_exists='append', index=False)
-                self.update_timestamp(table_name,datetime.datetime.now())
+                if len(data)>0:
+                    max_last_modified_date = data['LastModifiedDate'].max()
+                    self.update_timestamp(table_name,max_last_modified_date)
                 self.logger.debug(f"\t\tSuccesssfully Completed!")
                 return True  # Indicating success
             except Exception as e:

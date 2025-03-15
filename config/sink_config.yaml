@@ -15,8 +15,8 @@ mysql_conn_id:
     host: "localhost"
     port: "3306"
     dbname: "sfdc_stage"
-    user: "root"
-    password: "admin"
+    user: "bhargav"
+    password: "manager"
     driver: "com.mysql.cj.jdbc.Driver"
     jdbc_url: "jdbc:mysql://localhost:3306/dbname"
 

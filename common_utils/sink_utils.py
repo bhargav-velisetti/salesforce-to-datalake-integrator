@@ -172,12 +172,11 @@ class DBHelper:
                 data = pd.DataFrame(records)
                 data.to_sql(table_name, conn, schema=self.sink_schema, if_exists='append', index=False)
                 if len(data)>0:
-                    max_last_modified_date = data['LastModifiedDate'].max()
+                    from datetime import datetime
+                    max_last_modified_date = datetime.fromisoformat(data['LastModifiedDate'].max().replace('Z', '+00:00')).strftime("%Y-%m-%d %H:%M:%S")
                     self.update_timestamp(table_name,max_last_modified_date)
                 self.logger.debug(f"\t\tSuccesssfully Completed!")
                 return True  # Indicating success
             except Exception as e:
                 print(f"Error inserting data: {e}")
                 return False  # Indicating failure
-
-

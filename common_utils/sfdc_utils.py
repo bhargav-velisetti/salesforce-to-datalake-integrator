@@ -59,6 +59,10 @@ class SlaesforceAPIHelper:
             response_json = response.json()
             records.extend(response_json.get("records", []))
 
+            # Now we are looping over all the ULR's and appending the records to List called records.
+            # I am thing to create a df for each url and append the df to list.  result = pd.concat(frames) https://pandas.pydata.org/docs/user_guide/merging.html
+            # We need to check if mergin df's gives better performance or appending to list is better
+
             # Check if there's a nextRecordsUrl for pagination
             next_records_url = response_json.get("nextRecordsUrl")
             url = f"{self.instance_url}{next_records_url}" if next_records_url else None
@@ -153,6 +157,8 @@ class SlaesforceAPIHelper:
                     "Authorization": f"Bearer {self.bearer_token}",
                 }
         req = requests.get(url=url, headers=headers).json()
+        #We are loop over initial resultChunks and appending them to pageList. 
+        #We need to loop through nextRecordsUrl if it not null and append the resultChunks to pageList
         pageList.extend([req['resultChunks'][i] for i in range(0, len(req['resultChunks']), 1)])
         for i in range(0, len(pageList)):
             pageList[i] = self.instance_url + f'/services/data/{self.api_version}' + pageList[i]['resultLink']

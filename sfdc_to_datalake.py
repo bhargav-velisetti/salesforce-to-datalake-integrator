@@ -65,9 +65,10 @@ def main( config : dict, logger ):
             logger.debug("\tStarting Incremental Replication")
             # fetching the last time stamp and converting it into iso format.
             last_ts = dbhelper.last_fetch_ts(table)
-            last_ts_iso = last_ts.isoformat()
-            query = query + f" WHERE  {replication_key}> {last_ts_iso}"
+            last_ts_iso = last_ts.strftime('%Y-%m-%dT%H:%M:%SZ') # YYYY-MM-DDThh:mm:ssZ
+            #print(type(last_ts))
             logger.debug(f"\treplication_key : {replication_key}  ,  last_ts_iso  {last_ts_iso}")
+            query = query + f" WHERE  {replication_key}> {last_ts_iso}"
         else:
             logger.debug("Please provide Valid ingestion type. Hint: full/incremental")
             exit()
@@ -110,12 +111,6 @@ def main( config : dict, logger ):
             dbhelper.pd_insert_into_table(sink_table, df)
 
 
-
-
-
-
-
-
 if __name__ == '__main__':
 
     repl_conf_path = parse_args()
@@ -125,4 +120,12 @@ if __name__ == '__main__':
 
     with open(repl_conf_path, 'r') as f:
         config = yaml.load(f, Loader=yaml.SafeLoader)
+        import time
+        start_time = time.perf_counter()
+
+        # Start replication
         main(config, logger)
+
+        end_time = time.perf_counter()
+        elapsed_time = end_time - start_time
+        print(f"Elapsed time: {elapsed_time:.4f} seconds")

@@ -8,17 +8,24 @@ postgresql_conn_id:
     driver: "org.postgresql.Driver"
     jdbc_url: "jdbc:postgresql://localhost:5432/postgres"
 
-
-
 mysql_conn_id:
     engine: "mysql"
     host: "localhost"
     port: "3306"
     dbname: "sfdc_stage"
-    user: "bhargav"
+    user: "root"
     password: "manager"
     driver: "com.mysql.cj.jdbc.Driver"
     jdbc_url: "jdbc:mysql://localhost:3306/dbname"
+
+bq_conn_id:
+    engine: "bigquery"
+    project_id: "newdataeng"
+    dataset_id: "sfdc_stage"
+    key_path: "key_path"
+    location: "us-central1"
+    driver: "com.google.cloud.bigquery.jdbc.Driver"
+    jdbc_url: "jdbc:bigquery://https://www.googleapis.com/bigquery/v2:443;ProjectId=project_id;OAuthType=0;OAuthServiceAcctEmail=service_account_email;OAuthPvtKeyPath=key_path;DefaultDataset=dataset_id;Location=location"
 
 replication_config:
   config_dbname: "sfdc_config"

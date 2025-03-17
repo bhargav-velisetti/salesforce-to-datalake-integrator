@@ -163,12 +163,13 @@ class DBHelper:
 
     def update_timestamp(self,table : str ,last_fetch_ts : datetime):
         try:
-            self.logger.debug(f"\t\tUpdating Timestamp for Table: {update_chek_query}")    
+            #self.logger.debug(f"\t\tUpdating Timestamp for Table: {update_chek_query}")
             if self.engine=='postgresql':
                 update_chek_query = f"""INSERT INTO {self.config_dbname}.{self.config_table} (trg_tbl_nm, last_fetch_ts) 
                 VALUES ('{table}', '{last_fetch_ts}')
                 ON CONFLICT (trg_tbl_nm) DO UPDATE 
                 SET last_fetch_ts = EXCLUDED.last_fetch_ts;"""
+                self.db_execute(update_chek_query)
 
             elif self.engine=='mysql':
                 update_chek_query = f"""
@@ -177,6 +178,7 @@ class DBHelper:
                         ON DUPLICATE KEY UPDATE 
                         last_fetch_ts = VALUES(last_fetch_ts);
                     """
+                self.db_execute(update_chek_query)
 
             elif self.engine == 'bigquery':
                 update_chek_query = f"""WITH new_checkpoint AS ( SELECT '{table}' as trg_tbl_nm, '{last_fetch_ts}' as last_fetch_ts)
@@ -188,8 +190,7 @@ class DBHelper:
                 WHEN NOT MATCHED THEN
                 INSERT (trg_tbl_nm, last_fetch_ts) VALUES (new_checkpoint.trg_tbl_nm, new_checkpoint.last_fetch_ts);
                 """
-
-            self.db_execute(update_chek_query,)
+                self.db_execute(update_chek_query)
 
 
         except Exception as e:
@@ -201,7 +202,7 @@ class DBHelper:
         Creates Schema and drop table if exists
         '''
         if self.engine in ['mysql', 'postgresql', 'oracle+oracledb', 'mssql+pymssql']:
-            drop_query = f"DROP TABLE IF EXISTS {self.sink_dbname}.{self.sink_table};"
+            drop_query = f"DROP TABLE IF EXISTS {self.dbname}.{self.sink_table};"
 
         elif self.engine == 'bigquery':
             drop_query = f"DROP TABLE IF EXISTS {self.project_id}.{self.dataset_id}.{self.sink_table};"

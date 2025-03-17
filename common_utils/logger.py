@@ -4,7 +4,7 @@ import sys
 def stdout_logger():
 
     # Configure logging to output to stdout
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
 
     # Get a logger instance
     logger = logging.getLogger(__name__)

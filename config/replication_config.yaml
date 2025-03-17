@@ -8,7 +8,7 @@ sfdc_config:
 
 
 sink_config:
-  conn_id: "mysql_conn_id"
+  conn_id: "bq_conn_id"
   config_path: "config/sink_config.yaml"
   config_type: "plain_text"
   metadata:
@@ -36,7 +36,7 @@ tables:
     sink_table: "account"
     replication_key: "lastmodifieddate"
     primary_key: "id"
-    query: "SELECT AccountNumber, AccountSource, Active__c, AnnualRevenue, BillingStreet, BillingCity, BillingState, BillingPostalCode, BillingCountry, BillingLatitude, BillingLongitude, BillingGeocodeAccuracy, CreatedById, CreatedDate, CustomerPriority__c, Description, DunsNumber, Fax, Id, Industry, IsDeleted, LastActivityDate, LastModifiedById, LastModifiedDate, Name, NumberOfEmployees, OwnerId, Ownership, ParentId, Phone, Rating, ShippingStreet, ShippingCity, ShippingState, ShippingPostalCode, ShippingCountry, ShippingLatitude, ShippingLongitude, ShippingGeocodeAccuracy, Site, SLA__c, SLAExpirationDate__c, SLASerialNumber__c, SystemModstamp, TickerSymbol, Type, Website, YearStarted FROM Account limit 7000"
+    query: "SELECT AccountNumber, AccountSource, Active__c, AnnualRevenue, BillingStreet, BillingCity, BillingState, BillingPostalCode, BillingCountry, BillingLatitude, BillingLongitude, BillingGeocodeAccuracy, CreatedById, CreatedDate, CustomerPriority__c, Description, DunsNumber, Fax, Id, Industry, IsDeleted, LastActivityDate, LastModifiedById, LastModifiedDate, Name, NumberOfEmployees, OwnerId, Ownership, ParentId, Phone, Rating, ShippingStreet, ShippingCity, ShippingState, ShippingPostalCode, ShippingCountry, ShippingLatitude, ShippingLongitude, ShippingGeocodeAccuracy, Site, SLA__c, SLAExpirationDate__c, SLASerialNumber__c, SystemModstamp, TickerSymbol, Type, Website, YearStarted FROM Account"
     filter: "WHERE lastmodifieddate > '2021-01-01T00:00:00Z'" # Not implemented Yet.
 
   contact:

@@ -32,3 +32,4 @@ replication_config:
   config_dbname: "sfdc_config"
   config_schema: "schema"
   config_table: "checkpoint"
+  chk_table: "checkpoint" #replace the config table with the checkpoint table

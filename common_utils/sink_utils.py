@@ -232,7 +232,7 @@ class DBHelper:
                 client = engine
 
                 table_id = f"{self.project_id}.{self.dataset_id}.{table_name}"
-                job_config = bigquery.LoadJobConfig(write_disposition="WRITE_APPEND", createDisposition = "CREATE_IF_NEEDED") # Table will be created if not exists and data will be appended
+                job_config = bigquery.LoadJobConfig(write_disposition="WRITE_APPEND", create_disposition = "CREATE_IF_NEEDED") # Table will be created if not exists and data will be appended
                 job = client.load_table_from_dataframe(data, table_id, job_config=job_config)
                 job.result() # Wait for the job to complete.
 

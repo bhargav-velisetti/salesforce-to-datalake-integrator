@@ -110,7 +110,7 @@ class DBHelper:
             #self.logger.debug(f"\t\tTrying to create config schema : {self.config_schema}")
             #create_schema_query = f"create schema if not exists {self.config_schema};"
             #self.db_execute(create_schema_query, self.config_dbname)
-            create_table_query=f"""CREATE TABLE if not exists {self.config_dbname}.{self.config_table} (
+            create_table_query=f"""CREATE TABLE if not exists {self.config_schema}.{self.config_table} (
                             trg_tbl_nm VARCHAR(255) PRIMARY KEY,
                             last_fetch_ts TIMESTAMP WITH TIME ZONE DEFAULT '0001-01-01 00:00:00 UTC' -- Oldest possible timestamp
                             );"""

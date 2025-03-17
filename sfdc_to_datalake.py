@@ -55,25 +55,26 @@ def main( config : dict, logger ):
         salesforceapihelper = SlaesforceAPIHelper(instance_url, bearer_token)
 
         logger.debug(f"\tChecking if Config DB exists or Not. If not Trying to create it")
-        dbhelper.create_update_checkpoint()
+
+        dbhelper.create_checkpoint_table()
 
         # Updating Query based on load type
         if replication_type in config['metadata']['allowed_full_replication_types']:
-            logger.debug("\tStarting Full Replication")
+            logger.debug("Starting Full Replication")
 
         elif replication_type in config['metadata']['allowed_incremental_replication_types']:
-            logger.debug("\tStarting Incremental Replication")
+            logger.debug("Starting Incremental Replication")
             # fetching the last time stamp and converting it into iso format.
             last_ts = dbhelper.last_fetch_ts(table)
             last_ts_iso = last_ts.strftime('%Y-%m-%dT%H:%M:%SZ') # YYYY-MM-DDThh:mm:ssZ
             #print(type(last_ts))
-            logger.debug(f"\treplication_key : {replication_key}  ,  last_ts_iso  {last_ts_iso}")
+            logger.debug(f"replication_key : {replication_key}  ,  last_ts_iso  {last_ts_iso}")
             query = query + f" WHERE  {replication_key}> {last_ts_iso}"
         else:
             logger.debug("Please provide Valid ingestion type. Hint: full/incremental")
             exit()
 
-        logger.debug(f"\tUsing Query to fetch from salesforce : {query}")
+        logger.debug(f"Using Query to fetch from salesforce : {query}")
 
         # Clear table for full load
         if replication_type in config['metadata']['allowed_full_replication_types']:
@@ -101,13 +102,13 @@ def main( config : dict, logger ):
 
             for chunk in chunkd_result_pages:
                 df = salesforceapihelper.fetch_sfdc_bulkapi_results(chunk)
-                logger.debug(f'\tDf records received for {chunk}')
-                logger.debug(f"\tNumber of Rows recieved in Df = {len(df)}")
+                logger.debug(f'Df records received for {chunk}')
+                logger.debug(f"Number of Rows recieved in Df = {len(df)}")
                 dbhelper.pd_insert_into_table(sink_table, df)
         else:
             logger.debug('Starting sync api call')
             df = salesforceapihelper.fetch_data_from_sfdc_syncapi(query)
-            logger.debug(f"\tNumber of Rows recieved in Df = {len(df)}")
+            logger.debug(f"Number of Rows recieved in Df = {len(df)}")
             dbhelper.pd_insert_into_table(sink_table, df)
 
 

@@ -8,7 +8,7 @@ sfdc_config:
 
 
 sink_config:
-  conn_id: "mysql_conn_id"
+  conn_id: "bq_conn_id"
   config_path: "config/sink_config.yaml"
   config_type: "plain_text"
   metadata:

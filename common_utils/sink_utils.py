@@ -34,22 +34,23 @@ class DBHelper:
         Creates a database engine based on the sink type (e.g., MySQL, PostgreSQL).
         Uses the default dbname from config unless a specific database is provided.
         '''
-        target_db = self.dbname
+
+        #target_db = self.dbname
 
         if self.engine == 'mysql':
-            self.logger.debug(f"\t\tCreating MySQL Engine for Target Database: {target_db}")
-            return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/{target_db}")
+            self.logger.debug(f"\t\tCreating MySQL Engine for Target Database: {self.dbname}")
+            return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/{self.dbname}")
         
         elif self.engine == 'postgresql':
-            self.logger.debug(f"\t\tCreating Postgres Engine for Target Database: {target_db}")
-            return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/{target_db}")
+            self.logger.debug(f"\t\tCreating Postgres Engine for Target Database: {self.dbname}")
+            return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/{self.dbname}")
         
         elif self.engine == 'oracle+oracledb':
-            return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/?service_name={self.service_name}")
+            return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/?service_name={self.self.dbname}")
         
         elif self.engine == 'mssql+pymssql':
-            self.logger.debug(f"\t\tCreating mssql+pymssql Engine for Target Database: {target_db}")
-            return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/{target_db}")
+            self.logger.debug(f"\t\tCreating mssql+pymssql Engine for Target Database: {self.dbname}")
+            return sqlalchemy.create_engine(f"{self.engine}://{self.user}:{self.password}@{self.host}:{self.port}/{self.dbname}")
         
         elif self.engine == 'bigquery':
             self.logger.debug(f"\t\tCreating BigQuery Engine for Target Project : {self.project_id} & Target Dataset : {self.dataset_id}")
@@ -125,11 +126,11 @@ class DBHelper:
             self.db_execute(create_table_query, self.config_dbname)
         
         elif self.engine == "bigquery":
-            create_table_query = f"""CREATE TABLE if not exists `{self.project_id}{self.config_dbname}.{self.config_table}` (
+            create_table_query = f"""CREATE TABLE if not exists `{self.project_id}.{self.config_dbname}.{self.config_table}` (
                             trg_tbl_nm STRING,
                             last_fetch_ts TIMESTAMP
                             );"""
-            self.logger.debug(f"\t\tTrying to create config table :  `{self.project_id}{self.config_dbname}.{self.config_table}` ")
+            self.logger.debug(f"\t\tTrying to create config table :  `{self.project_id}.{self.config_dbname}.{self.config_table}` ")
             self.db_execute(create_table_query)
 
     def last_fetch_ts(self, table_name : str):

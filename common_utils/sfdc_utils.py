@@ -37,18 +37,19 @@ class SlaesforceAPIHelper:
         self.bearer_token = bearer_token
         self.api_version = api_version
 
-    # Extract Data from SFDC with syncronous API
+    # Extract Data from SFDC with syncronous API using generator concept
     # Reccommended for Incremental Load and full load with small amouns of the data
+
     def fetch_data_from_sfdc_syncapi(self, query: str) -> pd.DataFrame:
         """
-        Fetches all paginated data from Salesforce using the REST API.
+        Fetches paginated data incrementally from Salesforce using the REST API.
+        Yields DataFrames for each page of results.
         """
         headers = {
             "Authorization": f"Bearer {self.bearer_token}",
             "Content-Type": "application/json"
         }
 
-        records = []
         url = f"{self.instance_url}/services/data/{self.api_version}/queryAll?q={query}"
 
         while url:
@@ -57,25 +58,23 @@ class SlaesforceAPIHelper:
                 raise Exception(f"Failed to fetch data from Salesforce: {response.text}")
 
             response_json = response.json()
-            records.extend(response_json.get("records", []))
+            records_chunk = response_json.get("records", [])
 
-            # Now we are looping over all the ULR's and appending the records to List called records.
-            # I am thing to create a df for each url and append the df to list.  result = pd.concat(frames) https://pandas.pydata.org/docs/user_guide/merging.html
-            # We need to check if mergin df's gives better performance or appending to list is better
+            # Process chunk immediately
+            df_chunk = pd.DataFrame(records_chunk)
+            if 'attributes' in df_chunk.columns:
+                df_chunk.drop(columns=['attributes'], inplace=True)
+            if not df_chunk.empty:
+                df_chunk['Loaded_timestamp'] = datetime.now()
 
-            # Check if there's a nextRecordsUrl for pagination
+            yield df_chunk
+
+            # Get next page URL
             next_records_url = response_json.get("nextRecordsUrl")
             url = f"{self.instance_url}{next_records_url}" if next_records_url else None
-            # Convert the list of records to a DataFrame
-        df = pd.DataFrame(records)
 
-        # Remove the 'attributes' column if it exists
-        if 'attributes' in df.columns:
-            print("Dropping Attribute column::")
-            df.drop(columns=['attributes'], inplace=True)
-        if len(df)!=0:
-            df['Loaded_timestamp'] = datetime.now()
-        return df
+
+
 
     # Submit the job with BULK API 2.0
     def submit_sfdc_bulk_request(self, query: str):
@@ -178,7 +177,6 @@ class SlaesforceAPIHelper:
         '''
         Fetches data from multiple URLs asynchronously and combines them into a single DataFrame.
         '''
-        print(urls)
         async with aiohttp.ClientSession() as session:
             tasks = []
             for url in urls:
@@ -203,6 +201,11 @@ class SlaesforceAPIHelper:
 
         
     # Extract Data from SFDC with BULK API 2.0
-    def fetch_sfdc_bulkapi_results(self, result_pages : list) -> pd.DataFrame:
-        df = asyncio.run(self.get_chunkd_url_response(urls = result_pages))
+    def fetch_sfdc_bulkapi_results(self, result_pages: list) -> pd.DataFrame:
+        df = asyncio.run(self.get_chunkd_url_response(urls=result_pages))
+        # Add the same timestamp handling as in the sync API
+        if not df.empty:
+            df['Loaded_timestamp'] = datetime.now()
         return df
+
+

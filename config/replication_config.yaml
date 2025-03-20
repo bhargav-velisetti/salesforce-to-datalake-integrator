@@ -2,13 +2,13 @@ sfdc_config:
   conn_id: "sfdc_conn_id"
   config_path: "config/sfdc_config.yaml"
   config_type: "plain_text"
-  bulk_api_flag: "False"
+  bulk_api_flag: "True"
   metadata:
     allowed_config_types: ["plain_text", "gcp_secret_manager", "aws_secrets_manager", "azure_key_vault"]
 
 
 sink_config:
-  conn_id: "bq_conn_id"
+  conn_id: "postgresql_conn_id"
   config_path: "config/sink_config.yaml"
   config_type: "plain_text"
   metadata:
@@ -30,7 +30,7 @@ tables:
 
   account:
     sfdc_table: "account"
-    replication_type: "full"
+    replication_type: "incremental"
     sink_dbname: "sfdc_stage"
     sink_schema: "sfdc_stage"
     sink_table: "account"
@@ -41,7 +41,7 @@ tables:
 
   contact:
     sfdc_table: "contact"
-    replication_type: "full"
+    replication_type: "incremental"
     sink_dbname: "sfdc_stage"
     sink_schema: "sfdc_stage"
     sink_table: "contact"

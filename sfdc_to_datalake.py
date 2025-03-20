@@ -9,6 +9,7 @@ from common_utils.logger import get_logger
 from common_utils.sfdc_utils import get_bearertoken_and_instanceurl, SlaesforceAPIHelper
 from common_utils.sink_utils import DBHelper
 import  logging
+import pandas as pd
 
 
 
@@ -19,7 +20,6 @@ def main( config : dict, logger ):
     '''
 
     sfdc_config,bulk_api_flag = get_config( config['sfdc_config'] )
-    print("--------",bulk_api_flag)
     sink_config = get_config( config['sink_config'] )
     rep_config  = get_config( config['replication_config'] )
 
@@ -66,8 +66,7 @@ def main( config : dict, logger ):
             logger.debug("Starting Incremental Replication")
             # fetching the last time stamp and converting it into iso format.
             last_ts = dbhelper.last_fetch_ts(table)
-            last_ts_iso = last_ts.strftime('%Y-%m-%dT%H:%M:%SZ') # YYYY-MM-DDThh:mm:ssZ
-            #print(type(last_ts))
+            last_ts_iso = last_ts.strftime('%Y-%m-%dT%H:%M:%SZ')  # ISO format with Z for UTC
             logger.debug(f"replication_key : {replication_key}  ,  last_ts_iso  {last_ts_iso}")
             query = query + f" WHERE  {replication_key}> {last_ts_iso}"
         else:
@@ -90,26 +89,37 @@ def main( config : dict, logger ):
             parallelism = 2
 
             resultpages = salesforceapihelper.fetch_sfdc_bulkapi_resultpages(queryJobId, parallelism)
-
             logger.debug(f'\t{queryJobId} result pages are {resultpages}')
 
             if isinstance(resultpages, list):
-                chunkd_result_pages = chunk_list(resultpages, parallelism) # [1,2,3,4,5] -> [ [1,2], [3,4], [5]]
+                for page_url in resultpages:
+                    logger.debug(f'Processing page: {page_url}')
+                    df = salesforceapihelper.fetch_sfdc_bulkapi_results([page_url])
+                    logger.debug(f"Inserting {len(df)} rows from page")
+                    dbhelper.pd_insert_into_table(sink_table, df)
+                    del df  # Optional: Explicitly free memory
             else:
-                # comeup with the single result page code
-                chunkd_result_pages = ["single_page_url"]
-
-
-            for chunk in chunkd_result_pages:
-                df = salesforceapihelper.fetch_sfdc_bulkapi_results(chunk)
-                logger.debug(f'Df records received for {chunk}')
-                logger.debug(f"Number of Rows recieved in Df = {len(df)}")
+                df = salesforceapihelper.fetch_sfdc_bulkapi_results(resultpages)
                 dbhelper.pd_insert_into_table(sink_table, df)
+
         else:
+
             logger.debug('Starting sync api call')
-            df = salesforceapihelper.fetch_data_from_sfdc_syncapi(query)
-            logger.debug(f"Number of Rows recieved in Df = {len(df)}")
-            dbhelper.pd_insert_into_table(sink_table, df)
+            total_rows = 0
+            for df_chunk in salesforceapihelper.fetch_data_from_sfdc_syncapi(query):
+                chunk_size = len(df_chunk)
+                total_rows += chunk_size
+                logger.debug(f"Processing sync API chunk with {chunk_size} rows (total: {total_rows})")
+                if not df_chunk.empty:
+                    # Convert datetime fields if needed
+                    if 'LastModifiedDate' in df_chunk.columns:
+                        if sink_config['engine'] == "mysql":
+                            df_chunk['LastModifiedDate'] = pd.to_datetime(df_chunk['LastModifiedDate'], utc = True).dt.tz_localize(None)
+                        else:
+                            df_chunk['LastModifiedDate'] = pd.to_datetime(df_chunk['LastModifiedDate'])
+                    dbhelper.pd_insert_into_table(sink_table, df_chunk.to_dict('records'))
+                    del df_chunk
+            logger.debug(f"Total rows processed via sync API: {total_rows}")
 
 
 if __name__ == '__main__':

@@ -1,0 +1,16 @@
+postgresql_conn_id:
+    engine: "postgresql"
+    host: "localhost"
+    port: "5432"
+    dbname: "ELT"
+    user: "stagereader"
+    password: "elt-framework"
+    driver: "org.postgresql.Driver"
+    jdbc_url: "jdbc:postgresql://localhost:5432/elt"
+
+replication_config:
+  config_dbname: "sfdc_config"  # Doesn't matter at this point
+  config_schema: "sfdc_ingestion_config"
+  control_table: "ing_tbl_list"
+  config_table: "ing_tbl_columns"
+  chk_table: "checkpoint"

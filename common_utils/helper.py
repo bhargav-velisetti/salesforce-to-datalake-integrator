@@ -11,9 +11,14 @@ def parse_args():
         "-conf", "--replication_config", type=str, help="Provide the path of the replication config file", required=True
     )
 
+    parser.add_argument(
+        "-t", "--table_id", type=str, help="Provide the Table ID. Allowed Options = all | table", required=False,
+        default=None
+    )
+
     # Parse the command-line arguments
     args = parser.parse_args()
-    return args.replication_config
+    return args.replication_config, args.table_id
 
 def get_config(data : dict) -> dict:
     '''

@@ -18,7 +18,10 @@ def parse_args():
 
     # Parse the command-line arguments
     args = parser.parse_args()
-    return args.replication_config, args.table_id
+    if args.table_id is None:
+        return args.replication_config
+    else:
+        return args.replication_config, args.table_id
 
 def get_config(data : dict) -> dict:
     '''

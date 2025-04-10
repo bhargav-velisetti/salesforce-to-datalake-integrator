@@ -57,3 +57,11 @@ redshift_conn_id:
     host: "localhost"
     port: "5439"
     dbname: "dbname"
+
+databricks_conn_id:
+    engine: "databricks"
+    server_hostname: "dbc-xxxxxxxx.cloud.databricks.com"
+    http_path: "/sql/1.0/warehouses/xxxxxxxx"
+    access_token: "your_personal_access_token"
+    dbx_catalog: "hive_metastore"
+    dbx_schema: "default"

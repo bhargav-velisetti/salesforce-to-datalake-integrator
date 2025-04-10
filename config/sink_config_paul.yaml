@@ -8,8 +8,24 @@ postgresql_conn_id:
     driver: "org.postgresql.Driver"
     jdbc_url: "jdbc:postgresql://localhost:5432/elt"
 
+databricks_conn_id:
+    engine: "databricks"
+    server_hostname: "adb-459175646557754.14.azuredatabricks.net"
+    http_path: "/sql/1.0/warehouses/48d234b5cb77127e"
+    access_token: "******"
+    stage_path: "/user/hive/sfdc/stage/"
+    dbx_catalog: "hive_metastore"
+    dbx_schema: "default"
+
+databricks_replication_config:
+  config_dbname: "hive_metastore"  # Provide Catalog name here
+  config_schema: "sfdc_ingestion_config"
+  control_table: "ing_tbl_list"
+  config_table: "ing_tbl_columns"
+  chk_table: "checkpoint"
+
 replication_config:
-  config_dbname: "sfdc_config"  # Doesn't matter at this point
+  config_dbname: "ELT"  # Doesn't matter at this point / might be catalog for DBX
   config_schema: "sfdc_ingestion_config"
   control_table: "ing_tbl_list"
   config_table: "ing_tbl_columns"
